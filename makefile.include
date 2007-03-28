@@ -1,0 +1,96 @@
+#PLAT = unix
+#PRIV = install-private-headers
+#
+# Linux:
+#LDFLAGS = -L/usr/X11R6/lib -lX11 -ldl -lm # -lpthread
+#
+# Mac OS X:
+#LDFLAGS = -framework CoreFoundation -L/usr/X11R6/lib -lX11 -weak-lXss -lXext
+#LDFLAGS = -framework CoreFoundation -framework Carbon -framework IOKit
+#LDSTRIP = -x
+
+KITSRC = ../../kitInit.c ../../pwb.c ../../rechan.c ../../zlib.c \
+	 ../tcl/$(PLAT)/tclAppInit.c
+STATIC = --disable-shared
+OUTDIR = $(shell pwd)/build
+TCLDIR = --with-tcl=../lib --prefix=$(OUTDIR) --exec-prefix=$(OUTDIR)
+STRIP ?= strip
+
+tclkit-cli$(EXE): kit-cli$(EXE) ../../setupvfs.tcl build/files
+	cp kit-cli$(EXE) $@ && $(STRIP) $@
+	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ cli
+
+tclkit-dyn$(EXE): kit-cli$(EXE) build/tkdyn ../../setupvfs.tcl build/files
+	cp kit-cli$(EXE) $@ && $(STRIP) $@
+	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ dyn
+
+tclkit-gui$(EXE): kit-cli$(EXE) kit-gui$(EXE) ../../setupvfs.tcl build/files
+	cp kit-gui$(EXE) $@ && $(STRIP) $@
+	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ gui
+
+kit-cli$(EXE): build/tcl build/tclvfs build/vlerq build/zlib $(KITSRC)
+	$(CC) -o $@ $(CFLAGS) $(KITSRC) -Ibuild/include \
+	  -DKIT_LITE -DTCL_LOCAL_APPINIT=TclKit_AppInit -DSTATIC_BUILD \
+	  build/lib/vfs1*/*vfs1*.a build/lib/vlerqtcl4*/*vlerqtcl4*.a \
+	  build/lib/libz.a build/lib/libtcl8*.a $(LDFLAGS)
+
+kit-gui$(EXE): build/tcl build/tk build/tclvfs build/vlerq build/zlib $(KITSRC)
+	$(CC) -o $@ $(CFLAGS) $(KITSRC) -Ibuild/include \
+	  -DKIT_LITE -DTCL_LOCAL_APPINIT=TclKit_AppInit -DSTATIC_BUILD \
+	  build/lib/vfs1*/*vfs1*.a build/lib/vlerqtcl4*/*vlerqtcl4*.a \
+	  -DKIT_INCLUDES_TK build/lib/libtk8*.a \
+	  build/lib/libz.a build/lib/libtcl8*.a $(LDFLAGS) $(GUI_OPTS)
+
+build/files:
+	mkdir -p $@ && cd $@ && ln -s ../../../../files/* .
+
+build/tcl:
+	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
+	  sh ../../../tcl/$(PLAT)/configure $(STATIC) $(TCL_OPTS) \
+	    --prefix=$(OUTDIR) --exec-prefix=$(OUTDIR) && \
+	  $(MAKE) install-binaries install-libraries $(PRIV)
+
+threaded: build/threaddyn
+build/threaddyn: build/tcl
+	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
+	  sh ../../../thread/configure $(TCLDIR) $(THREADDYN_OPTS) && \
+	  $(MAKE) install-binaries install-libraries
+
+build/tk: build/tcl
+	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
+	  sh ../../../tk/$(PLAT)/configure $(STATIC) $(TCLDIR) $(TK_OPTS) && \
+	  $(MAKE) install-binaries install-libraries
+
+build/tkdyn: build/tcl
+	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
+	  sh ../../../tk/$(PLAT)/configure $(TCLDIR) $(TKDYN_OPTS) && \
+	  $(MAKE) binaries && $(STRIP) $(LDSTRIP) libtk8.* && \
+	  $(MAKE) install-binaries install-libraries
+
+build/tclvfs: build/tcl
+	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
+	  sh ../../../tclvfs/configure $(STATIC) $(TCLDIR) $(VFS_OPTS) && \
+	  $(MAKE) install
+
+build/vlerq: build/tcl
+	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
+	  sh ../../../vlerq/configure $(STATIC) $(TCLDIR) $(VLERQ_OPTS) && \
+	  $(MAKE) install
+
+build/zlib: build/tcl
+	cp -R ../zlib/. $@
+	cd $@ && $(MAKE) install prefix=.. CC="$(CC)" CFLAGS="-O $(CFLAGS)"
+
+base: build/tcl build/tk
+	ls -l build/bin
+
+tidy:
+	rm -rf build/{tcl,tclvfs,thread,tk,tkdyn,vlerq,zlib}
+	
+clean:
+	rm -rf build kit-{cli,gui}$(EXE)
+
+distclean: clean
+	rm -f tclkit-{cli,dyn,gui}$(EXE)
+
+.PHONY: all base clean distclean threaded tidy

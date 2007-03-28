@@ -1,0 +1,35 @@
+Swisskit
+========
+
+[Swisskit][1] is an elaborate build of [Tclkit Lite][2] for Mac OS X.
+It was built with the new [Kitgen][3] configuration system.
+
+Swisskit ...
+
+  * ... is based on the latest Tcl/Tk 8.5a6 sources from CVS
+  * ... is a universal threaded build for any PowerPC or Intel 10.4-based Mac
+  * ... can bring up an X11-based Tk if the "DISPLAY" environment var is set
+  * ... will use the Tk Aqua shared library instead if "DISPLAY" is not set
+  * ... includes all available encodings, message catalogs, and timezone files
+  * ... has Tile and the Thread + Ttrace packages, as well as TclVFS and Vlerq
+
+In other words: Swisskit can be the Swiss Army Knife for Tcl/Tk on the Mac.
+
+
+News
+----
+
+  * 2006-11-19 : first release, a 3.7 Mb [download][4] as ZIP archive
+  
+
+Acknowledgements
+----------------
+
+Swisskit is a tribute to Daniel Steffen, who has contiously improved the Tcl/Tk
+system for Macintosh, and who has made it possible to load either the Aqua or
+the X11 version of Tk from the same single-file standalone executable.
+
+  [1]: http://www.equi4.com/swisskit.html
+  [2]: http://www.equi4.com/tclkitlite.html
+  [3]: http://www.equi4.com/kitgen.html
+  [4]: http://www.equi4.com/pub/tk/swisskit.zip
