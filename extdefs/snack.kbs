@@ -1,0 +1,18 @@
+Version 2.2.10
+
+Sources fetch http://www.speech.kth.se/snack/dist/snack2.2.10.tar.gz
+
+Build {
+  if {![file exists [Libdir]/tclConfig.orig]} {
+    file copy [Libdir]/tclConfig.sh [Libdir]/tclConfig.orig
+    set f [open [Libdir]/tclConfig.sh r]; set d [read $f] ; close $f
+    set d [string map [list "TCL_SHARED_BUILD=0" "TCL_SHARED_BUILD=1"] $d]
+    set f [open [Libdir]/tclConfig.sh w]; puts -nonewline $f $d; close $f
+  }
+  Sh [Srcdir]/unix/configure \
+     --with-tcl=[Libdir] --with-tk=[Libdir] --libdir=[Libdir]
+  Sh make install
+  Sh strip -x [Unglob ../lib/snack2*/libsnack*]
+}
+
+Result [Unglob ../lib/snack2*]
