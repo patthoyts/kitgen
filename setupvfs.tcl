@@ -59,10 +59,10 @@ if {$debugOpt} {
 }
 
 set tcl_library ../tcl/library
-source ../tcl/library/init.tcl	      ;# for tcl::CopyDirectory
-source ../tclvfs/library/vfsUtils.tcl
-source ../tclvfs/library/vfslib.tcl   ;# overrides vfs::memchan in vfsUtils.tcl
-source ../vlerq/library/m2mvfs.tcl
+source ../tcl/library/init.tcl ;# for tcl::CopyDirectory
+source ../../8.x/tclvfs/library/vfsUtils.tcl
+source ../../8.x/tclvfs/library/vfslib.tcl ;# override vfs::memchan/vfsUtils.tcl
+source ../../8.x/vlerq/library/m2mvfs.tcl
 
 set clifiles {
   boot.tcl

@@ -1,0 +1,11 @@
+Version 1.6.1
+
+Sources cvs tls.cvs.sourceforge.net:/cvsroot/tls
+
+Build {
+    Sh [Srcdir]/configure --with-tcl=[Libdir] --with-ssl-dir=/usr
+    Sh make install-binaries
+    Sh strip -x [Unglob ../lib/tls1*/libtls1*]
+}
+
+Result [Unglob ../lib/tls1*]
