@@ -120,6 +120,9 @@ namespace eval config {
     }
     
     proc Srcdir {} {
+        if {![file isdirectory [Topdir]/8.x]} {
+            file mkdir [Topdir]/8.x
+        }
         return [Topdir]/8.x/$v::package-$v::version
     }
     
