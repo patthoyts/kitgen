@@ -1,0 +1,11 @@
+Version 0.8.1
+
+Sources cvs cvs.tdom.org:/usr/local/pubcvs tdom
+
+Build {
+    Sh [Srcdir]/configure --with-tcl=[Libdir]
+    Sh make install-binaries
+    Sh strip -x [Unglob ../lib/tdom0*/libtdom0*]
+}
+
+Result [Unglob ../lib/tdom0*]

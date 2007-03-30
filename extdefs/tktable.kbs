@@ -1,0 +1,11 @@
+Version 2.9
+
+Sources cvs tktable.cvs.sourceforge.net:/cvsroot/tktable
+
+Build {
+    Sh [Srcdir]/configure --with-tcl=[Libdir] --with-tk=[Libdir]
+    Sh make install-binaries
+    Sh strip -x [Unglob ../lib/Tktable2*/libTktable2*]
+}
+
+Result [Unglob ../lib/Tktable2*]

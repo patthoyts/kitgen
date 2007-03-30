@@ -27,7 +27,7 @@ proc kbs::list {} {
 }
 
 proc kbs::make {} {
-    foreach f [glob -directory ../../extdefs -tails *.kbs] {
+    foreach f [lsort [glob -directory ../../extdefs -tails *.kbs]] {
         set target [file root $f]
         if {![file exists build/$target]} {
             puts $target:
