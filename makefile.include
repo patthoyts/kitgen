@@ -1,3 +1,6 @@
+# -*- Makefile -*-
+# NOTE: this file require GNU Make.
+#
 #PLAT = unix
 #PRIV = install-private-headers
 #
@@ -86,12 +89,13 @@ base: build/tcl build/tk
 	ls -l build/bin
 
 tidy:
-	rm -rf build/{tcl,tclvfs,thread,tk,tkdyn,vlerq,zlib}
+	rm -rf build/tcl build/tclvfs build/thread build/tk \
+	  build/tkdyn build/vlerq build/zlib
 	
 clean:
-	rm -rf build kit-{cli,gui}$(EXE)
+	rm -rf build kit-cli$(EXE) kit-gui$(EXE)
 
 distclean: clean
-	rm -f tclkit-{cli,dyn,gui}$(EXE)
+	rm -f tclkit-cli$(EXE) tclkit-dyn $(EXE) tclkit-gui$(EXE)
 
 .PHONY: all base clean distclean threaded tidy
