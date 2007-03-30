@@ -1,0 +1,15 @@
+#Version 1.3
+Version 1.2.6
+
+#Sources svn https://tkimg.svn.sourceforge.net/svnroot/tkimg/trunk
+Sources cvs tkimg.cvs.sourceforge.net:/cvsroot/tkimg
+
+Build {
+    Sh [Srcdir]/configure --with-tcl=[Libdir] --with-tk=[Libdir]
+    Sh make install
+    foreach f [glob ../lib/Img1*/*[info sharedlibext]] {
+        Sh strip -x $f
+    }
+}
+
+Result [Unglob ../lib/Img1*]
