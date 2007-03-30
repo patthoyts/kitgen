@@ -109,6 +109,12 @@ static char appInitCmd[] =
 static char preInitCmd[] =
 "proc tclKitPreInit {} {\n"
     "rename tclKitPreInit {}\n"
+    /* In 8.5 we need to set these paths for child interps */
+    "global tcl_library tcl_libPath tcl_version\n"
+    "set noe [info nameofexecutable]\n"
+    "set tcl_library [file join $noe lib tcl$tcl_version]\n"
+    "set tcl_libPath [list $tcl_library [file join $noe lib]]\n"
+    "set tcl_pkgPath [list $tcl_library [file join $noe lib]]\n"
 /*
  * XXX: We should consider adding mk4tcl, pwb, rechan, zlib, vfs, Thread
  * XXX: and Tk as pre-defined packages here as well.
