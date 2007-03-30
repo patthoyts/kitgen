@@ -9,6 +9,7 @@
 #LDFLAGS = -framework CoreFoundation -framework Carbon -framework IOKit
 #LDSTRIP = -x
 
+EXTDIR = ../../../../8.x
 KITSRC = ../../kitInit.c ../../pwb.c ../../rechan.c ../../zlib.c \
 	 ../tcl/$(PLAT)/tclAppInit.c
 STATIC = --disable-shared
@@ -53,7 +54,7 @@ build/tcl:
 threaded: build/threaddyn
 build/threaddyn: build/tcl
 	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
-	  sh ../../../thread/configure $(TCLDIR) $(THREADDYN_OPTS) && \
+	  sh $(EXTDIR)/thread/configure $(TCLDIR) $(THREADDYN_OPTS) && \
 	  $(MAKE) install-binaries install-libraries
 
 build/tk: build/tcl
@@ -69,16 +70,16 @@ build/tkdyn: build/tcl
 
 build/tclvfs: build/tcl
 	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
-	  sh ../../../tclvfs/configure $(STATIC) $(TCLDIR) $(VFS_OPTS) && \
+	  sh $(EXTDIR)/tclvfs/configure $(STATIC) $(TCLDIR) $(VFS_OPTS) && \
 	  $(MAKE) install
 
 build/vlerq: build/tcl
 	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
-	  sh ../../../vlerq/configure $(STATIC) $(TCLDIR) $(VLERQ_OPTS) && \
+	  sh $(EXTDIR)/vlerq/configure $(STATIC) $(TCLDIR) $(VLERQ_OPTS) && \
 	  $(MAKE) install
 
 build/zlib: build/tcl
-	cp -R ../zlib/. $@
+	cp -R ../../8.x/zlib/. $@
 	cd $@ && $(MAKE) install prefix=.. CC="$(CC)" CFLAGS="-O $(CFLAGS)"
 
 base: build/tcl build/tk

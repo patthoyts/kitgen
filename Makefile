@@ -10,35 +10,34 @@ unspecified-target:
 8.4:
 	mkdir -p $@ && cd $@ && \
 	  cvs -d $(TCL_CVS) co -r core-8-4-branch tcl && \
-	  cvs -d $(TCL_CVS) co thread && \
-	  cvs -d $(TK_CVS) co -r core-8-4-branch tk && \
-	  cvs -d $(VFS_CVS) co tclvfs && \
-	  cvs -d $(VLERQ_CVS) co -d vlerq vlerq/tcl && \
-	  cvs -d $(ZLIB_CVS) co zlib
-	#sh config.sh 8.4/base-aqua sym univ aqua
-	#sh config.sh 8.4/base-x11 sym univ
-	sh config.sh 8.4/base-std sym
+	  cvs -d $(TK_CVS) co -r core-8-4-branch tk
+	#sh config.sh 8.4/base-aqua univ aqua
+	#sh config.sh 8.4/base-x11 univ
+	sh config.sh 8.4/base-std
 
 8.5:
 	mkdir -p $@ && cd $@ && \
 	  cvs -d $(TCL_CVS) co tcl && \
+	  cvs -d $(TK_CVS) co tk
+	#sh config.sh 8.5/base-aqua univ aqua thread
+	#sh config.sh 8.5/base-x11 univ thread
+	sh config.sh 8.5/base-std thread
+
+8.x:
+	mkdir -p $@ && cd $@ && \
 	  cvs -d $(TCL_CVS) co thread && \
-	  cvs -d $(TK_CVS) co tk && \
 	  cvs -d $(VFS_CVS) co tclvfs && \
 	  cvs -d $(VLERQ_CVS) co -d vlerq vlerq/tcl && \
 	  cvs -d $(ZLIB_CVS) co zlib
-	#sh config.sh 8.5/base-aqua sym univ aqua thread
-	#sh config.sh 8.5/base-x11 sym univ thread
-	sh config.sh 8.5/base-std sym thread
-
+	
 cvs:
 	for i in 8*/*/CVS; do (cd `dirname $$i`; cvs up); done
 
-small: 8.4
+small: 8.x 8.4
 	sh config.sh 8.4/kit-small cli dyn
 	cd 8.4/kit-small && $(MAKE) && $(MAKE) clean
 
-large: 8.5
+large: 8.x 8.5
 	sh config.sh 8.5/kit-large aqua univ thread allenc allmsgs tzdata
 	cd 8.5/kit-large && $(MAKE) && $(MAKE) clean
 
