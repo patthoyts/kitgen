@@ -73,7 +73,7 @@ namespace eval config {
                 foreach x [info vars v::*] { lappend keep $x [set $x] }
                 namespace delete ::config::v
 
-                set r [catch { ::kbs::build $target } err]
+                set r [catch { kbs build $target } err]
                 
                 namespace delete ::config::v
                 namespace eval v {}

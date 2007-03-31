@@ -1,0 +1,10 @@
+Version 4.0.2
+
+Sources cvs incrtcl.cvs.sourceforge.net:/cvsroot/incrtcl iwidgets
+
+Build {
+    Sh [Srcdir]/configure --with-tcl=[Libdir] --with-itcl=[Srcdir]/../Itcl-3.3
+    Sh make install-libraries
+}
+
+Result [Unglob ../lib/iwidgets4*]
