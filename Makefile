@@ -1,9 +1,7 @@
 TCL_CVS   = :pserver:anonymous@tcl.cvs.sourceforge.net:/cvsroot/tcl
 TK_CVS    = :pserver:anonymous@tktoolkit.cvs.sourceforge.net:/cvsroot/tktoolkit
 VFS_CVS   = :pserver:anonymous@tclvfs.cvs.sourceforge.net:/cvsroot/tclvfs
-VLERQ_CVS = :pserver:anonymous@equi4.com:/home/cvs
-ZLIB_CVS  = :pserver:anonymous@equi4.com:/home/cvs
-ZLIB_URL  = http://www.zlib.net/zlib-1.2.3.tar.gz
+ZLIB_CVS  = :pserver:anonymous@tkimg.cvs.sourceforge.net:/cvsroot/tkimg
 
 unspecified-target:
 
@@ -27,11 +25,12 @@ unspecified-target:
 	mkdir -p $@ && cd $@ && \
 	  cvs -d $(TCL_CVS) co thread && \
 	  cvs -d $(VFS_CVS) co tclvfs && \
-	  cvs -d $(VLERQ_CVS) co -d vlerq vlerq/tcl && \
-	  cvs -d $(ZLIB_CVS) co zlib
+	  cvs -d $(ZLIB_CVS) co -d zlib tkimgs/libz
+	# cvs -d $(VLERQ_CVS) co -d vlerq vlerq/tcl
 	
-cvs:
+update:
 	for i in 8*/*/CVS; do (cd `dirname $$i`; cvs up); done
+	#for i in 8*/*/.svn; do (cd `dirname $$i`; svn up); done
 
 small: 8.x 8.4
 	sh config.sh 8.4/kit-small cli dyn
@@ -53,4 +52,4 @@ docs:
 	markdown-tm 'Swisskit - a big single-file Tcl/Tk for Mac OS X' \
 	  <README.swisskit >~/Sites/www.equi4.com/swisskit.html
 
-.PHONY: all base tidy clean distclean cvs small large docs
+.PHONY: all base tidy clean distclean update small large docs
