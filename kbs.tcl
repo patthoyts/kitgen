@@ -96,7 +96,7 @@ namespace eval config {
         }
         puts "  untarring $file"
         file mkdir tmp
-        exec tar xfz $file -C tmp
+        Untar $file
         set untarred [glob tmp/*]
         if {[llength $untarred] == 1 && [file isdir [lindex $untarred 0]]} {
             file rename [lindex $untarred 0] [Srcdir]
@@ -138,6 +138,14 @@ namespace eval config {
         set paths [glob $match]
         if {[llength $paths] != 1} { error "not unique: $match" }
         lindex $paths 0
+    }
+
+    proc Untar {file} {
+        set path [file normalize $file]
+        cd tmp
+        set r [catch {exec gzip -dc $path | tar xf -} err]
+        cd ..
+        if {$r} {return -code error $err}
     }
     
     proc Sh {args} {
