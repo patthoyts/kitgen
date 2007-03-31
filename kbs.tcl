@@ -75,8 +75,8 @@ namespace eval config {
 
                 set r [catch { ::kbs::build $target } err]
                 
-                catch { namespace delete ::config::v }
-                namespace eval ::config::v {}
+                namespace delete ::config::v
+                namespace eval v {}
                 foreach {x y} $keep { set $x $y }
                 
                 cd $pwd
@@ -124,16 +124,7 @@ namespace eval config {
                 error "fetch failed"
             }
         }
-        puts "  untarring $file"
-        file mkdir tmp
-        Untar $file
-        set untarred [glob tmp/*]
-        if {[llength $untarred] == 1 && [file isdir [lindex $untarred 0]]} {
-            file rename [lindex $untarred 0] [Srcdir]
-            file delete tmp
-        } else {
-            file rename tmp [Srcdir]
-        }
+        Untar $file [Srcdir]
     }
     
     proc src-symlink {path} {
@@ -157,11 +148,11 @@ namespace eval config {
     }
     
     proc Incdir {} {
-        file normalize $v::maindir/build/include
+        return $v::maindir/build/include
     }
     
     proc Libdir {} {
-        file normalize $v::maindir/build/lib
+        return $v::maindir/build/lib
     }
     
     proc Unglob {match} {
@@ -170,12 +161,25 @@ namespace eval config {
         lindex $paths 0
     }
 
-    proc Untar {file} {
+    proc Untar {file dest} {
         set path [file normalize $file]
+        file mkdir tmp
         cd tmp
+        # use explicit gzip in case tar command doesn't understand the z flag
         set r [catch {exec gzip -dc $path | tar xf -} err]
         cd ..
-        if {$r} {return -code error $err}
+        if {$r} { 
+            file delete -force tmp
+            return -code error $err
+        }
+        # cover both cases: untar to single dir and untar all into current dir
+        set untarred [glob tmp/*]
+        if {[llength $untarred] == 1 && [file isdir [lindex $untarred 0]]} {
+            file rename [lindex $untarred 0] $dest
+            file delete tmp
+        } else {
+            file rename tmp $dest
+        }
     }
     
     proc Sh {args} {
