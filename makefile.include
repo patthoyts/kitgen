@@ -1,5 +1,5 @@
 # -*- Makefile -*-
-# NOTE: this file require GNU Make.
+# NOTE: this file requires GNU Make.
 #
 #PLAT = unix
 #PRIV = install-private-headers
@@ -96,6 +96,6 @@ clean:
 	rm -rf build kit-cli$(EXE) kit-gui$(EXE)
 
 distclean: clean
-	rm -f tclkit-cli$(EXE) tclkit-dyn $(EXE) tclkit-gui$(EXE)
+	rm -f tclkit-cli$(EXE) tclkit-dyn$(EXE) tclkit-gui$(EXE)
 
 .PHONY: all base clean distclean threaded tidy
