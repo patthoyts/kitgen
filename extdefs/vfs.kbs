@@ -1,0 +1,11 @@
+Version 1.3
+
+Sources cvs tclvfs.cvs.sourceforge.net:/cvsroot/tclvfs
+
+Build {
+    Sh [Srcdir]/configure --with-tcl=[Libdir]
+    Sh make install-binaries
+    Sh strip -x [Unglob ../lib/vfs1*/libvfs1*]
+}
+
+Result [Unglob ../lib/vfs1*]

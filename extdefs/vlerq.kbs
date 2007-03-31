@@ -1,0 +1,11 @@
+Version 4.1
+
+Sources fetch http://www.equi4.com/pub/vq/vlerqtcl-2007-01-25.tar.gz
+
+Build {
+    Sh [Srcdir]/configure --with-tcl=[Libdir]
+    Sh make install-binaries
+    Sh strip -x [Unglob ../lib/vlerqtcl4*/libvlerqtcl4*]
+}
+
+Result [Unglob ../lib/vlerqtcl4*]
