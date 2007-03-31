@@ -1,0 +1,11 @@
+Version 2.6.5
+
+Sources cvs tcl.cvs.sourceforge.net:/cvsroot/tcl thread
+
+Build {
+    Sh [Srcdir]/configure --with-tcl=[Libdir]
+    Sh make install-binaries
+    Sh strip -x [Unglob ../lib/thread2*/libthread2*]
+}
+
+Result [Unglob ../lib/thread2*]
