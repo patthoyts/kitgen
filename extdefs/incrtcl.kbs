@@ -5,7 +5,7 @@ Sources cvs incrtcl.cvs.sourceforge.net:/cvsroot/incrtcl incrTcl
 Build {
     Sh [Srcdir]/itcl/configure --with-tcl=[Libdir]
     Sh make binaries ITCL_LIBRARY=
-    Sh make install-binaries
+    Sh make install-binaries install-libraries
     Sh strip -x [Unglob ../lib/itcl3*/libitcl3*]
 }
 

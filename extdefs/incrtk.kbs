@@ -1,0 +1,15 @@
+Version 3.3
+
+Requires incrtcl
+
+Sources symlink [Topdir]/8.x/incrtcl-[Version]
+
+Build {
+    Sh [Srcdir]/itk/configure \
+        --with-tcl=[Libdir] --with-itcl=[Libdir] --with-tk=[Libdir]
+    Sh make binaries ITCL_LIBRARY=
+    Sh make install-binaries
+    Sh strip -x [Unglob ../lib/itk3*/libitk3*]
+}
+
+Result [Unglob ../lib/itk3*]

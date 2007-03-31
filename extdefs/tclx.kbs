@@ -1,0 +1,11 @@
+Version 8.4
+
+Sources cvs tclx.cvs.sourceforge.net:/cvsroot/tclx
+
+Build {
+    Sh [Srcdir]/configure --with-tcl=[Libdir]
+    Sh make install-binaries
+    Sh strip -x [Unglob ../lib/tclx8*/libtclx8*]
+}
+
+Result [Unglob ../lib/tclx8*]
