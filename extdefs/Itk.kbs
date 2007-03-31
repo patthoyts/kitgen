@@ -2,7 +2,7 @@ Version 3.3
 
 Requires Itcl
 
-Sources symlink [Topdir]/8.x/Itcl-[Version]
+Sources symlink [Srcdir]/../Itcl-[Version]
 
 Build {
     Sh [Srcdir]/itk/configure \
