@@ -11,6 +11,7 @@ Build {
   }
   Sh [Srcdir]/unix/configure \
      --with-tcl=[Libdir] --with-tk=[Libdir] --libdir=[Libdir]
+  Sh make
   Sh make install
   Sh strip -x [Unglob ../lib/snack2*/libsnack*]
 }
