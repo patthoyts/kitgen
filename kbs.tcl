@@ -10,7 +10,9 @@ proc kbs {command args} {
     uplevel 1 ::kbs::$command $args
 }
 
-namespace eval kbs {}
+namespace eval kbs {
+    variable seq 0
+}
     
 proc kbs::help {} {
     puts "Kitgen Build System
@@ -23,11 +25,11 @@ proc kbs::help {} {
 }
 
 proc kbs::list {} {
-    puts [glob -directory ../../extdefs -tails *.kbs]
+    puts [lsort -dict [glob -directory ../../extdefs -tails *.kbs]]
 }
 
 proc kbs::make {} {
-    foreach f [lsort [glob -directory ../../extdefs -tails *.kbs]] {
+    foreach f [lsort -dict [glob -directory ../../extdefs -tails *.kbs]] {
         set target [file root $f]
         if {![file exists build/$target]} {
             puts $target:
@@ -43,9 +45,11 @@ proc kbs::build {target} {
 }
 
 namespace eval config {
+    
     proc init {name} {
-        namespace eval v [list set package $name]
-        namespace eval v [list set maindir [pwd]]
+        namespace eval v {}
+        set v::package $name
+        set v::maindir [pwd]
         file mkdir build/$name
         cd build/$name
         source [Topdir]/extdefs/$name.kbs
@@ -54,6 +58,32 @@ namespace eval config {
     proc Version {{ver ""}} {
         if {$ver ne ""} { set v::version $ver }
         return $v::version
+    }
+    
+    proc Requires {args} {
+        # build all the other required extensions first, then resume this one
+        # this recurses into kbs::build, so we need to save/restore all state
+        foreach target $args {
+            if {![file exists $v::maindir/build/$target]} {
+                puts ">>> $target (required by $v::package)"
+                set pwd [pwd]
+                cd $v::maindir
+                
+                set keep {}
+                foreach x [info vars v::*] { lappend keep $x [set $x] }
+                namespace delete ::config::v
+
+                set r [catch { ::kbs::build $target } err]
+                
+                catch { namespace delete ::config::v }
+                namespace eval ::config::v {}
+                foreach {x y} $keep { set $x $y }
+                
+                cd $pwd
+                if {$r} { return -code error $err}
+                puts "<<< $target (resuming build of $v::package)"
+            }
+        }
     }
     
     proc Sources {type args} {

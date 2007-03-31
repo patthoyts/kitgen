@@ -1,8 +1,8 @@
 Version 3.3
 
-Requires incrtcl
+Requires Itcl
 
-Sources symlink [Topdir]/8.x/incrtcl-[Version]
+Sources symlink [Topdir]/8.x/Itcl-[Version]
 
 Build {
     Sh [Srcdir]/itk/configure \
