@@ -46,7 +46,7 @@ load {} vfs ;# vlerq is already loaded by now
 # this relies on having all necessary extensions already loaded at this point
 set versmap [list tcl8@ tcl$tcl_version tk8@ tk$tcl_version \
                   vfs1@ vfs[package require vfs] \
-                  vlerqtcl4@ vlerqtcl[package require vlerq]]
+                  vqtcl4@ vqtcl[package require vlerq]]
                
 if {$debugOpt} {
   puts "Starting [info script]"
@@ -62,7 +62,7 @@ set tcl_library ../tcl/library
 source ../tcl/library/init.tcl ;# for tcl::CopyDirectory
 source ../../8.x/tclvfs/library/vfsUtils.tcl
 source ../../8.x/tclvfs/library/vfslib.tcl ;# override vfs::memchan/vfsUtils.tcl
-source ../../8.x/vlerq/library/m2mvfs.tcl
+source ../../8.x/vqtcl/library/m2mvfs.tcl
 
 set clifiles {
   boot.tcl
@@ -82,11 +82,11 @@ set clifiles {
   lib/vfs1@/vfslib.tcl
   lib/vfs1@/vfsUtils.tcl
   lib/vfs1@/zipvfs.tcl
-  lib/vlerqtcl4@/m2mvfs.tcl
-  lib/vlerqtcl4@/mkclvfs.tcl
-  lib/vlerqtcl4@/mklite.tcl
-  lib/vlerqtcl4@/pkgIndex.tcl
-  lib/vlerqtcl4@/ratcl.tcl
+  lib/vqtcl4@/m2mvfs.tcl
+  lib/vqtcl4@/mkclvfs.tcl
+  lib/vqtcl4@/mklite.tcl
+  lib/vqtcl4@/pkgIndex.tcl
+  lib/vqtcl4@/ratcl.tcl
 }
 
 set guifiles {

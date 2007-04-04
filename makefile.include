@@ -32,16 +32,16 @@ tclkit-gui$(EXE): kit-cli$(EXE) kit-gui$(EXE) ../../setupvfs.tcl build/files
 	cp kit-gui$(EXE) $@ && $(STRIP) $@
 	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ gui
 
-kit-cli$(EXE): build/tcl build/tclvfs build/vlerq build/zlib $(KITSRC)
+kit-cli$(EXE): build/tcl build/tclvfs build/vqtcl build/zlib $(KITSRC)
 	$(CC) -o $@ $(CFLAGS) $(KITSRC) -Ibuild/include \
 	  -DKIT_LITE -DTCL_LOCAL_APPINIT=TclKit_AppInit -DSTATIC_BUILD \
-	  build/lib/vfs1*/*vfs1*.a build/lib/vlerqtcl4*/*vlerqtcl4*.a \
+	  build/lib/vfs1*/*vfs1*.a build/lib/vqtcl4*/libvqtcl4*.a \
 	  build/lib/libz.a build/lib/libtcl8*.a $(LDFLAGS)
 
-kit-gui$(EXE): build/tcl build/tk build/tclvfs build/vlerq build/zlib $(KITSRC)
+kit-gui$(EXE): build/tcl build/tk build/tclvfs build/vqtcl build/zlib $(KITSRC)
 	$(CC) -o $@ $(CFLAGS) $(KITSRC) -Ibuild/include \
 	  -DKIT_LITE -DTCL_LOCAL_APPINIT=TclKit_AppInit -DSTATIC_BUILD \
-	  build/lib/vfs1*/*vfs1*.a build/lib/vlerqtcl4*/*vlerqtcl4*.a \
+	  build/lib/vfs1*/*vfs1*.a build/lib/vqtcl4*/libvqtcl4*.a \
 	  -DKIT_INCLUDES_TK build/lib/libtk8*.a \
 	  build/lib/libz.a build/lib/libtcl8*.a $(LDFLAGS) $(GUI_OPTS)
 
@@ -76,9 +76,9 @@ build/tclvfs: build/tcl
 	  sh $(EXTDIR)/tclvfs/configure $(STATIC) $(TCLDIR) $(VFS_OPTS) && \
 	  $(MAKE) install
 
-build/vlerq: build/tcl
+build/vqtcl: build/tcl
 	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
-	  sh $(EXTDIR)/vlerq/configure $(STATIC) $(TCLDIR) $(VLERQ_OPTS) && \
+	  sh $(EXTDIR)/vqtcl/configure $(STATIC) $(TCLDIR) $(VLERQ_OPTS) && \
 	  $(MAKE) install
 
 build/zlib: build/tcl
@@ -90,7 +90,7 @@ base: build/tcl build/tk
 
 tidy:
 	rm -rf build/tcl build/tclvfs build/thread build/tk \
-	  build/tkdyn build/vlerq build/zlib
+	  build/tkdyn build/vqtcl build/zlib
 	
 clean:
 	rm -rf build kit-cli$(EXE) kit-gui$(EXE)
