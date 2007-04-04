@@ -35,13 +35,13 @@ tclkit-gui$(EXE): kit-cli$(EXE) kit-gui$(EXE) ../../setupvfs.tcl build/files
 kit-cli$(EXE): build/tcl build/tclvfs build/vqtcl build/zlib $(KITSRC)
 	$(CC) -o $@ $(CFLAGS) $(KITSRC) -Ibuild/include \
 	  -DKIT_LITE -DTCL_LOCAL_APPINIT=TclKit_AppInit -DSTATIC_BUILD \
-	  build/lib/vfs1*/*vfs1*.a build/lib/vqtcl4*/libvqtcl4*.a \
+	  build/lib/vfs1*/*vfs1*.a build/lib/vqtcl4*/*vqtcl4*.a \
 	  build/lib/libz.a build/lib/libtcl8*.a $(LDFLAGS)
 
 kit-gui$(EXE): build/tcl build/tk build/tclvfs build/vqtcl build/zlib $(KITSRC)
 	$(CC) -o $@ $(CFLAGS) $(KITSRC) -Ibuild/include \
 	  -DKIT_LITE -DTCL_LOCAL_APPINIT=TclKit_AppInit -DSTATIC_BUILD \
-	  build/lib/vfs1*/*vfs1*.a build/lib/vqtcl4*/libvqtcl4*.a \
+	  build/lib/vfs1*/*vfs1*.a build/lib/vqtcl4*/*vqtcl4*.a \
 	  -DKIT_INCLUDES_TK build/lib/libtk8*.a \
 	  build/lib/libz.a build/lib/libtcl8*.a $(LDFLAGS) $(GUI_OPTS)
 

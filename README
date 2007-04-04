@@ -15,6 +15,7 @@ Kitgen is pronounced "kit-chen".
 News
 ----
 
+  * 2007-04-04 : added kbs.tcl, the Kitgen Build System - see README.kbs
   * 2007-01-11 : fixed a vfs thread issue in boot.tcl, by Jeff Hobbs
   * 2006-12-20 : fixed typo, mention the FFF feedback forum below
   * 2006-12-15 : added *BSD support (use gmake i.s.o. make)
@@ -132,23 +133,22 @@ The key trick is to get the directory structure right so that `sh config.sh` and
             base-*/
             kit-*/
             tcl/
-            tclvfs/
-            thread/
             tk/
-            vlerq/
-            zlib/
         8.5/
             base-*/
             kit-*/
             tcl/
+            tk/
+	8.x/
             tclvfs/
             thread/
-            tk/
-            vlerq/
+            vqtcl/
             zlib/
         config.sh
         files/
         ...
+
+The 8.x/ directory contains the source code which works with both 8.4 and 8.5.
 
 You do not have to have both 8.4/ and 8.5/, nor do you have to give them exactly
 these names, but they must start with "8". There can be multiple sets of code
@@ -252,13 +252,13 @@ are no build/* directories present.  One way to force this is `make clean`
 which does a `rm -rf build` .  Otherwise, for directories which already exist,
 the rebuild is skipped.  To force a rebuild of only the vlerq extension, do:
 
-    rm -rf build/vlerq && make
+    rm -rf build/vqtcl && make
     
 The sub-directories of build/ are the areas where each call to the respective
 "configure" script places its results.  When debugging either a build or the
 extension itself, it may be more convenient to work in that specific subdir:
 
-    cd builds/vlerq && make
+    cd builds/vqtcl && make
     
 After that, you can do `cd ../.. && make` to complete the tclkit builds.
 
