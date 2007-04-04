@@ -51,7 +51,7 @@ proc tclInit {} {
       
       # glob for a subdir in "lib", then source the specified file inside it
       foreach {d f} {
-      	vfs1* vfsUtils.tcl vfs1* vfslib.tcl vlerqtcl4* mkclvfs.tcl
+      	vfs1* vfsUtils.tcl vfs1* vfslib.tcl vqtcl4* mkclvfs.tcl
       } {
         foreach z [lsearch -int -all $prows $r] {
       	  if {[string match $d [lindex $dname $z]]} break
