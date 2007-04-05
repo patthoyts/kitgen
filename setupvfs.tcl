@@ -202,6 +202,9 @@ proc vfscopy {argv} {
   }
 }
 
+set vfs [lindex $argv 0]
+vfs::m2m::Mount $vfs $vfs
+
 switch [info sharedlibext] {
   .dll {
     catch {
@@ -211,6 +214,17 @@ switch [info sharedlibext] {
       set vsn [package require Thread]
       file copy -force $dll build/lib/libthread$vsn.dll
       unset dll vsn
+    }
+    # create dde and registry pkgIndex files with the right version
+    foreach ext {dde registry} {
+      if {[catch {
+          load {} $ext
+          set extdir [file join $vfs lib $ext]
+          file mkdir $extdir
+          set f [open $extdir/pkgIndex.tcl w]
+          puts $f "package ifneeded $ext [package provide $ext] {load {} $ext}"
+          close $f
+      } err]} { puts "ERROR: $err"}
     }
     catch {
       file delete [glob build/lib/libtk8?.a] ;# so only libtk8?s.a will be found
@@ -226,9 +240,6 @@ switch [info sharedlibext] {
     }
   }
 }
-
-set vfs [lindex $argv 0]
-vfs::m2m::Mount $vfs $vfs
 
 switch [lindex $argv 1] {
   cli {

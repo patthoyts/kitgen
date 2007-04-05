@@ -115,16 +115,6 @@ static char preInitCmd[] =
     "set tcl_library [file join $noe lib tcl$tcl_version]\n"
     "set tcl_libPath [list $tcl_library [file join $noe lib]]\n"
     "set tcl_pkgPath [list $tcl_library [file join $noe lib]]\n"
-/*
- * XXX: We should consider adding mk4tcl, pwb, rechan, zlib, vfs, Thread
- * XXX: and Tk as pre-defined packages here as well.
- * XXX: Currently Thread has a special pkgIndex.tcl in the starkit, but
- * XXX: several of the other packages won't be auto-recognized.
- */
-#ifdef _WIN32
-    "package ifneeded dde      1.2.3 {load {} dde}\n"
-    "package ifneeded registry 1.1.3 {load {} registry}\n"
-#endif
 "}\n"
 "tclKitPreInit"
 ;

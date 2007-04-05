@@ -13,10 +13,12 @@
 #LDSTRIP = -x
 
 EXTDIR = ../../../../8.x
-KITSRC = ../../kitInit.c ../../pwb.c ../../rechan.c ../../zlib.c \
-	 ../tcl/$(PLAT)/tclAppInit.c
 STATIC = --disable-shared
 OUTDIR = $(shell pwd)/build
+OBJ    = $(OUTDIR)/pwb.o $(OUTDIR)/rechan.o $(OUTDIR)/zlib.o
+CLIOBJ = $(OBJ) $(OUTDIR)/tclAppInit.o
+DYNOBJ ?= $(CLIOBJ)
+GUIOBJ ?= $(CLIOBJ)
 TCLDIR = --with-tcl=../lib --prefix=$(OUTDIR) --exec-prefix=$(OUTDIR)
 STRIP ?= strip
 
@@ -24,23 +26,29 @@ tclkit-cli$(EXE): kit-cli$(EXE) ../../setupvfs.tcl build/files
 	cp kit-cli$(EXE) $@ && $(STRIP) $@
 	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ cli
 
-tclkit-dyn$(EXE): kit-cli$(EXE) build/tkdyn ../../setupvfs.tcl build/files
-	cp kit-cli$(EXE) $@ && $(STRIP) $@
+tclkit-dyn$(EXE): kit-dyn$(EXE) build/tkdyn ../../setupvfs.tcl build/files
+	cp kit-dyn$(EXE) $@ && $(STRIP) $@
 	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ dyn
 
 tclkit-gui$(EXE): kit-cli$(EXE) kit-gui$(EXE) ../../setupvfs.tcl build/files
 	cp kit-gui$(EXE) $@ && $(STRIP) $@
 	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ gui
 
-kit-cli$(EXE): build/tcl build/tclvfs build/vqtcl build/zlib $(KITSRC)
-	$(CC) -o $@ $(CFLAGS) $(KITSRC) -Ibuild/include \
-	  -DKIT_LITE -DTCL_LOCAL_APPINIT=TclKit_AppInit -DSTATIC_BUILD \
+kit-cli$(EXE): build/tcl build/tclvfs build/vqtcl build/zlib $(CLIOBJ)
+	$(CC) -o $@ $(CFLAGS) ../../kitInit.c $(CLIOBJ) \
+	  -Ibuild/include -DKIT_LITE -DSTATIC_BUILD \
 	  build/lib/vfs1*/*vfs1*.a build/lib/vqtcl4*/*vqtcl4*.a \
 	  build/lib/libz.a build/lib/libtcl8*.a $(LDFLAGS)
 
-kit-gui$(EXE): build/tcl build/tk build/tclvfs build/vqtcl build/zlib $(KITSRC)
-	$(CC) -o $@ $(CFLAGS) $(KITSRC) -Ibuild/include \
-	  -DKIT_LITE -DTCL_LOCAL_APPINIT=TclKit_AppInit -DSTATIC_BUILD \
+kit-dyn$(EXE): build/tcl build/tclvfs build/vqtcl build/zlib $(CLIOBJ)
+	$(CC) -o $@ $(CFLAGS) ../../kitInit.c $(DYNOBJ) \
+	  -Ibuild/include -DKIT_LITE -DSTATIC_BUILD \
+	  build/lib/vfs1*/*vfs1*.a build/lib/vqtcl4*/*vqtcl4*.a \
+	  build/lib/libz.a build/lib/libtcl8*.a $(LDFLAGS)
+
+kit-gui$(EXE): build/tcl build/tk build/tclvfs build/vqtcl build/zlib $(GUIOBJ)
+	$(CC) -o $@ $(CFLAGS) ../../kitInit.c $(GUIOBJ) \
+	  -Ibuild/include -DKIT_LITE -DSTATIC_BUILD \
 	  build/lib/vfs1*/*vfs1*.a build/lib/vqtcl4*/*vqtcl4*.a \
 	  -DKIT_INCLUDES_TK build/lib/libtk8*.a \
 	  build/lib/libz.a build/lib/libtcl8*.a $(LDFLAGS) $(GUI_OPTS)
@@ -63,7 +71,7 @@ build/threaddyn: build/tcl
 build/tk: build/tcl
 	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
 	  sh ../../../tk/$(PLAT)/configure $(STATIC) $(TCLDIR) $(TK_OPTS) && \
-	  $(MAKE) install-binaries install-libraries
+	  $(MAKE) install-binaries install-libraries $(PRIV)
 
 build/tkdyn: build/tcl
 	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
@@ -90,12 +98,29 @@ base: build/tcl build/tk
 
 tidy:
 	rm -rf build/tcl build/tclvfs build/thread build/tk \
-	  build/tkdyn build/vqtcl build/zlib
-	
+	  build/tkdyn build/vqtcl build/zlib build/*.o
+
 clean:
-	rm -rf build kit-cli$(EXE) kit-gui$(EXE)
+	rm -rf build kit-cli$(EXE) kit-gui$(EXE) kit-dyn$(EXE)
 
 distclean: clean
 	rm -f tclkit-cli$(EXE) tclkit-dyn$(EXE) tclkit-gui$(EXE)
 
 .PHONY: all base clean distclean threaded tidy
+
+$(OUTDIR)/pwb.o:  ../../pwb.c
+	$(CC) -o $@ $(CFLAGS) -DSTATIC_BUILD -Ibuild/include -c $<
+
+$(OUTDIR)/rechan.o: ../../rechan.c
+	$(CC) -o $@ $(CFLAGS) -DSTATIC_BUILD -Ibuild/include -c $<
+
+$(OUTDIR)/zlib.o: ../../zlib.c
+	$(CC) -o $@ $(CFLAGS) -DSTATIC_BUILD -Ibuild/include -c $<
+
+$(OUTDIR)/tclAppInit.o: ../tcl/$(PLAT)/tclAppInit.c
+	$(CC) -o $@ $(CFLAGS) -DSTATIC_BUILD -Ibuild/include \
+	  -DTCL_LOCAL_APPINIT=TclKit_AppInit -c $<
+
+$(OUTDIR)/winMain.o: ../tk/$(PLAT)/winMain.c
+	$(CC) -o $@ $(CFLAGS) -DSTATIC_BUILD -Ibuild/include \
+	  -DTK_LOCAL_APPINIT=TclKit_AppInit -c $<
