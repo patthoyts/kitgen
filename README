@@ -139,7 +139,7 @@ The key trick is to get the directory structure right so that `sh config.sh` and
             kit-*/
             tcl/
             tk/
-	8.x/
+        8.x/
             tclvfs/
             thread/
             vqtcl/
@@ -194,7 +194,7 @@ The remaining arguments of config.sh specify one or more build options:
   * `ppc` - build for PowerPC _(Mac OS X only)_
   * `sym` - enable & keep debugger symbols in the executable
   * `thread` - build with threading and include the Thread extension
-  * `tzdata` - include a huge set of timezone data files _(8.5 only)_
+  * `tzdata` - include the complete set of timezone data files _(8.5 only)_
   * `univ` - build for both PowerPC and Intel _(Mac OS X only)_
   * `x86` - build for Intel _(Mac OS X only)_
   
@@ -276,8 +276,8 @@ It is essentially a way for tclkit to bootstrap itself into becoming usable.
 
 The reason things are done this way is that it avoids the need to have a working
 tclkit around to construct a new one, which'd be a chicken-and-egg situation.
-Furthermore, this approach makes it possible to build a tclkit totally from
-scratch without requiring any binary data files (as "genkit" did).
+So this approach makes it possible to build a tclkit totally from scratch
+without requiring any binary data files (as "genkit" did).
 
 Some variations in generating the VFS data are configured via the command line:
 
