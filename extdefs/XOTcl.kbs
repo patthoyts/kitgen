@@ -1,0 +1,11 @@
+Version 1.5.3
+
+Sources fetch http://media.wu-wien.ac.at/download/xotcl-1.5.3.tar.gz
+
+Build {
+    Run sh [Srcdir]/configure --with-tcl=[Libdir]
+    Run make install-binaries install-libraries
+    Run strip -x [Unglob ../lib/xotcl1*/libxotcl1*]
+}
+
+Result [Unglob ../lib/xotcl1*]
