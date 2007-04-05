@@ -9,11 +9,11 @@ Build {
     set d [string map [list "TCL_SHARED_BUILD=0" "TCL_SHARED_BUILD=1"] $d]
     set f [open [Libdir]/tclConfig.sh w]; puts -nonewline $f $d; close $f
   }
-  Sh [Srcdir]/unix/configure \
+  Run sh [Srcdir]/unix/configure \
      --with-tcl=[Libdir] --with-tk=[Libdir] --libdir=[Libdir]
-  Sh make
-  Sh make install
-  Sh strip -x [Unglob ../lib/snack2*/libsnack*]
+  Run make
+  Run make install
+  Run strip -x [Unglob ../lib/snack2*/libsnack*]
 }
 
 Result [Unglob ../lib/snack2*]

@@ -3,9 +3,9 @@ Version 1.0.9
 Sources cvs tcludp.cvs.sourceforge.net:/cvsroot/tcludp
 
 Build {
-    Sh [Srcdir]/configure --with-tcl=[Libdir]
-    Sh make install-binaries
-    Sh strip -x [Unglob ../lib/udp1*/libudp1*]
+    Run sh [Srcdir]/configure --with-tcl=[Libdir]
+    Run make install-binaries
+    Run strip -x [Unglob ../lib/udp1*/libudp1*]
 }
 
 Result [Unglob ../lib/udp1*]

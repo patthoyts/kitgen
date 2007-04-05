@@ -5,10 +5,10 @@ Version 1.2.6
 Sources cvs tkimg.cvs.sourceforge.net:/cvsroot/tkimg
 
 Build {
-    Sh [Srcdir]/configure --with-tcl=[Libdir] --with-tk=[Libdir]
-    Sh make install
+    Run sh [Srcdir]/configure --with-tcl=[Libdir] --with-tk=[Libdir]
+    Run make install
     foreach f [glob ../lib/Img1*/*[info sharedlibext]] {
-        Sh strip -x $f
+        Run strip -x $f
     }
 }
 

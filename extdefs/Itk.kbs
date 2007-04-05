@@ -5,11 +5,11 @@ Requires Itcl
 Sources symlink [Srcdir]/../Itcl-[Version]
 
 Build {
-    Sh [Srcdir]/itk/configure \
+    Run sh [Srcdir]/itk/configure \
         --with-tcl=[Libdir] --with-itcl=[Libdir] --with-tk=[Libdir]
-    Sh make binaries ITCL_LIBRARY=
-    Sh make install-binaries
-    Sh strip -x [Unglob ../lib/itk3*/libitk3*]
+    Run make binaries ITCL_LIBRARY=
+    Run make install-binaries
+    Run strip -x [Unglob ../lib/itk3*/libitk3*]
 }
 
 Result [Unglob ../lib/itk3*]
