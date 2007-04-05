@@ -95,12 +95,12 @@ namespace eval config {
     proc src-cvs {path {module ""}} {
         if {$module eq ""} { set module [file tail $path]}
         if {[string first @ $path] < 0} { set path :pserver:anonymous@$path }
-        Sh cvs -d $path -z3 co -P -d tmp $module
+        Run cvs -d $path -z3 co -P -d tmp $module
         file rename tmp [Srcdir]
     }
     
     proc src-svn {path} {
-        Sh svn co $path [Srcdir]
+        Run svn co $path [Srcdir]
     }
     
     proc src-fetch {path} {
@@ -180,7 +180,7 @@ namespace eval config {
         }
     }
     
-    proc Sh {args} {
+    proc Run {args} {
         lappend args >@stdout 2>@stderr
         eval [linsert $args 0 exec]
     }
