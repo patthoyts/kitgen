@@ -323,6 +323,7 @@ Tclkit Lite is based. There'd not be a Tclkit Lite, nor kitgen, without them.
 Contributors & testers:
 
   * Brian Theado (mingw/win32)
+  * Pat Thoyts (more mingw/win32 fixes)
 
 Lastly, many thanks to all those who have contributed to the evolution of Tclkit
 over the years, with suggestions, bug reports, encouragement, and enthusiasm.
