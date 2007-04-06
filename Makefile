@@ -1,43 +1,32 @@
-TCL_CVS   = :pserver:anonymous@tcl.cvs.sourceforge.net:/cvsroot/tcl
-TK_CVS    = :pserver:anonymous@tktoolkit.cvs.sourceforge.net:/cvsroot/tktoolkit
-VFS_CVS   = :pserver:anonymous@tclvfs.cvs.sourceforge.net:/cvsroot/tclvfs
-ZLIB_CVS  = :pserver:anonymous@tkimg.cvs.sourceforge.net:/cvsroot/tkimg
+TAR_URL	= http://www.equi4.com/pub/tk/tars
 
 unspecified-target:
 
-8.4:
-	mkdir -p $@ && cd $@ && \
-	  cvs -d $(TCL_CVS) co -r core-8-4-branch tcl && \
-	  cvs -d $(TK_CVS) co -r core-8-4-branch tk
-	#sh config.sh 8.4/base-aqua univ aqua
-	#sh config.sh 8.4/base-x11 univ
+tars:
+	mkdir 8.x && cd 8.x && \
+	  wget -q $(TAR_URL)/vfs.tar.gz && tar xfz vfs.tar.gz && \
+	  wget -q $(TAR_URL)/zlib.tar.gz && tar xfz zlib.tar.gz && \
+	  wget -q $(TAR_URL)/vqtcl.tgz && tar xfz vqtcl.tgz && \
+	  rm *gz && mv vfs tclvfs
+	mkdir 8.4 && cd 8.4 && \
+	  wget -q $(TAR_URL)/tcl.tar.gz && tar xfz tcl.tar.gz && \
+	  wget -q $(TAR_URL)/tk.tar.gz && tar xfz tk.tar.gz && \
+	  rm *gz
+	mkdir 8.5 && cd 8.5 && \
+	  wget -q $(TAR_URL)/tcl85.tar.gz && tar xfz tcl85.tar.gz && \
+	  wget -q $(TAR_URL)/tk85.tar.gz && tar xfz tk85.tar.gz && \
+	  rm *gz && mv tcl85 tcl && mv tk85 tk
+
+configs:
 	sh config.sh 8.4/base-std
-
-8.5:
-	mkdir -p $@ && cd $@ && \
-	  cvs -d $(TCL_CVS) co tcl && \
-	  cvs -d $(TK_CVS) co tk
-	#sh config.sh 8.5/base-aqua univ aqua thread
-	#sh config.sh 8.5/base-x11 univ thread
-	sh config.sh 8.5/base-std thread
-
-8.x:
-	mkdir -p $@ && cd $@ && \
-	  cvs -d $(TCL_CVS) co thread && \
-	  cvs -d $(VFS_CVS) co tclvfs && \
-	  cvs -d $(ZLIB_CVS) co -d zlib tkimg/libz
-	# cvs -d $(VLERQ_CVS) co -d vlerq vlerq/tcl
-	
-update:
-	for i in 8*/*/CVS; do (cd `dirname $$i`; cvs up); done
-	#for i in 8*/*/.svn; do (cd `dirname $$i`; svn up); done
-
-small: 8.x 8.4
 	sh config.sh 8.4/kit-small cli dyn
+	sh config.sh 8.5/base-std thread
+	sh config.sh 8.5/kit-large aqua univ thread allenc allmsgs tzdata
+	
+small: configs
 	cd 8.4/kit-small && $(MAKE) && $(MAKE) clean
 
-large: 8.x 8.5
-	sh config.sh 8.5/kit-large aqua univ thread allenc allmsgs tzdata
+large: configs
 	cd 8.5/kit-large && $(MAKE) && $(MAKE) clean
 
 base tidy:
@@ -52,4 +41,4 @@ docs:
 	markdown-tm 'Swisskit - a big single-file Tcl/Tk for Mac OS X' \
 	  <README.swisskit >~/Sites/www.equi4.com/swisskit.html
 
-.PHONY: all base tidy clean distclean update small large docs
+.PHONY: all base tidy clean distclean small large docs tars configs
