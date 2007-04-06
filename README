@@ -49,6 +49,7 @@ These instructions are for a Unix-type system and do a build using CVS sources:
 
     cvs -d :pserver:anonymous@equi4.com:/home/cvs co kitgen
     cd kitgen
+    make tars
     make small
     
 That's it.  This produces two executables in `8.4/kit-small/`:
@@ -60,6 +61,7 @@ Or, to build a threaded Tcl/Tk 8.5 build with all encodings and more included:
 
     cvs -d :pserver:anonymous@equi4.com:/home/cvs co kitgen
     cd kitgen
+    make tars
     make large
     
 In this case a third executable is also produced:

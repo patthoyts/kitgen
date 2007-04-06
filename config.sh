@@ -28,7 +28,7 @@ make=$path/Makefile
 mach=`uname`
 plat=unix
 
-echo "Configuring $make for $mach." >&2
+echo "Configuring $make for $mach."
 mkdir -p $path
 
 case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
