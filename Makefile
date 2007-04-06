@@ -25,7 +25,7 @@ unspecified-target:
 	mkdir -p $@ && cd $@ && \
 	  cvs -d $(TCL_CVS) co thread && \
 	  cvs -d $(VFS_CVS) co tclvfs && \
-	  cvs -d $(ZLIB_CVS) co -d zlib tkimgs/libz
+	  cvs -d $(ZLIB_CVS) co -d zlib tkimg/libz
 	# cvs -d $(VLERQ_CVS) co -d vlerq vlerq/tcl
 	
 update:
