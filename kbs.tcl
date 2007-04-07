@@ -145,6 +145,10 @@ namespace eval config {
         return [Topdir]/sources/$v::package-$v::version
     }
     
+    proc Destdir {} {
+        return $v::maindir/build
+    }
+    
     proc Incdir {} {
         return $v::maindir/build/include
     }

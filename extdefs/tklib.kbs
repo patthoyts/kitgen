@@ -1,0 +1,10 @@
+Version 0.4
+
+Sources cvs tcllib.cvs.sourceforge.net:/cvsroot/tcllib tklib
+
+Build {
+    Run sh [Srcdir]/configure --prefix=[Destdir]
+    Run make install-libraries
+}
+
+Result [Unglob ../lib/tklib0*]

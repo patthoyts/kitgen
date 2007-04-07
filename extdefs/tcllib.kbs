@@ -1,0 +1,10 @@
+Version 1.9
+
+Sources cvs tcllib.cvs.sourceforge.net:/cvsroot/tcllib
+
+Build {
+    Run sh [Srcdir]/configure --prefix=[Destdir]
+    Run make install-libraries
+}
+
+Result [Unglob ../lib/tcllib1*]
