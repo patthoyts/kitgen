@@ -1,0 +1,11 @@
+Version 3.0
+
+Sources fetch http://tkhtml.tcl.tk/tkhtml3-alpha-14.tar.gz
+
+Build {
+    Run sh [Srcdir]/configure --with-tcl=[Libdir] --with-tk=[Libdir]
+    Run make install
+    Run strip -x [Unglob ../lib/Tkhtml3*/libTkhtml3*]
+}
+
+Result [Unglob ../lib/Tkhtml3*]
