@@ -9,11 +9,12 @@ Build {
     set d [string map [list "TCL_SHARED_BUILD=0" "TCL_SHARED_BUILD=1"] $d]
     set f [open [Libdir]/tclConfig.sh w]; puts -nonewline $f $d; close $f
   }
-  Run sh [Srcdir]/unix/configure \
+  Run sh [Srcdir]/unix/configure --enable-stubs \
      --with-tcl=[Libdir] --with-tk=[Libdir] --libdir=[Libdir]
   Run make
   Run make install
   Run strip -x [Unglob ../lib/snack2*/libsnack*]
+  Run strip -x [Unglob ../lib/snack2*/libsound*]
 }
 
 Result [Unglob ../lib/snack2*]
