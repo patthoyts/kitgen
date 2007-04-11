@@ -102,7 +102,7 @@ tidy: cleanext
 cleanext:
 	rm -rf build/tclvfs build/thread build/vqtcl build/zlib build/*.o
 
-clean: cleanext
+clean:
 	rm -rf build kit-cli$(EXE) kit-gui$(EXE) kit-dyn$(EXE)
 
 distclean: clean
