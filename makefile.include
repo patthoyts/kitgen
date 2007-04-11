@@ -96,11 +96,13 @@ build/zlib: build/tcl
 base: build/tcl build/tk
 	ls -l build/bin
 
-tidy:
-	rm -rf build/tcl build/tclvfs build/thread build/tk \
-	  build/tkdyn build/vqtcl build/zlib build/*.o
+tidy: cleanext
+	rm -rf build/tcl build/tk build/tkdyn
 
-clean:
+cleanext:
+	rm -rf build/tclvfs build/thread build/vqtcl build/zlib build/*.o
+
+clean: cleanext
 	rm -rf build kit-cli$(EXE) kit-gui$(EXE) kit-dyn$(EXE)
 
 distclean: clean
