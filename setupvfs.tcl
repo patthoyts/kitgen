@@ -197,8 +197,25 @@ proc vfscopy {argv} {
       file mkdir $d
     }
 
-    set n [locatefile $f]
-    file copy $n $vfs/$f
+    set src [locatefile $f]
+    set dest $vfs/$f
+    
+    switch -- [file extension $src] {
+      .tcl - .txt - .msg - .test {
+        # get line-endings right for text files - this is crucial for boot.tcl
+        # and several scripts in lib/vlerq4/ which are loaded before vfs works
+        set fin [open $src r]
+        set fout [open $dest w]
+        fcopy $fin $fout
+        close $fin
+        close $fout
+      }
+      default {
+        file copy $src $dest
+      }
+    }
+    
+    file mtime $dest [file mtime $src]
   }
 }
 
