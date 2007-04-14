@@ -206,6 +206,7 @@ proc vfscopy {argv} {
         # and several scripts in lib/vlerq4/ which are loaded before vfs works
         set fin [open $src r]
         set fout [open $dest w]
+        fconfigure $fout -translation lf
         fcopy $fin $fout
         close $fin
         close $fout
