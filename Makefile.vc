@@ -164,7 +164,8 @@ $(BUILD)\tclAppInit.obj: ..\tcl\win\tclAppInit.c
 	  -DTCL_LOCAL_APPINIT=TclKit_AppInit -Fo$@ -c $**
 
 $(BUILD)\winMain.obj: ..\tk\win\winMain.c
-	$(CC) $(CFLAGS) -I$(BUILD)\include -I..\tk\generic -I..\tk\win \
+	$(CC) $(CFLAGS) -I$(BUILD)\include \
+	  -I..\tcl\generic -I..\tcl\win -I..\tk\generic -I..\tk\win \
 	  -DTK_LOCAL_APPINIT=TclKit_AppInit -Fo$@ -c $**
 
 $(BUILD)\tclkit.res: ..\..\tclkit.rc
