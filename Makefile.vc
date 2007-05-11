@@ -1,0 +1,195 @@
+# -*- Makefile -*-
+#
+# This is an NMAKE file to be used to build tclkit using Microsoft Visual C++
+#
+# To make use of this build system create a build subdirectory 
+# 8.4\kit-msvc or 8.5\kit-msvc and create a Makefile that contains only
+#  !include ..\..\Makefile.vc
+# Ensure that 8.4\tcl and 8.4\tk contain copies of the tcl and tk sources
+# (or 8.5\* if you are using this version)
+# Finally change to this build directory and build it all using 
+#  nmake -f makefile.vc VERSION=84
+#
+# If you want to create a symbols/debug build then add SYMBOLS=1
+#
+#
+
+!ifndef VERSION
+!message *** You must specify the Tcl version. Set VERSION=84 or 85
+!message *** You may also specify SYMBOLS=0|1
+!error
+!else
+V=$(VERSION)
+!endif
+
+!ifndef SYMBOLS
+SYMBOLS=0
+!endif
+
+MAKE    = $(MAKE) -nologo
+CPY     = xcopy /i /y >NUL
+COPY    = copy /y >NUL
+RMDIR   = rmdir /s /q
+CC      = cl -nologo
+LINK    = link -nologo
+CFLAGS  = -W3 -D_WINDOWS -DWIN32 -DSTATIC_BUILD
+BUILD   = $(MAKEDIR)\build
+
+!if $V == 84
+PARTS   = vqtcl zlib vfs
+OPTS    = static,msvcrt
+X       = sx
+KITOPTS = 
+LIBS    = user32.lib gdi32.lib comdlg32.lib comctl32.lib \
+	  shell32.lib imm32.lib advapi32.lib
+!else
+PARTS   = vqtcl zlib vfs threaddyn
+OPTS    = static,msvcrt,threads
+X       = tsx
+KITOPTS = -t
+LIBS    = user32.lib gdi32.lib
+!endif
+
+!if $(SYMBOLS)
+X       = $(X:x=gx)
+OPTS    = $(OPTS),symbols
+CFLAGS  = -MDd -Od -Zi -D_DEBUG $(CFLAGS)
+LDFLAGS = -debug
+!else
+CFLAGS  = -MD -O2 -DNDEBUG $(CFLAGS)
+LDFLAGS = -release
+!endif
+
+CLIOBJS = $(BUILD)\pwb.obj $(BUILD)\rechan.obj \
+	 $(BUILD)\zlib.obj $(BUILD)\tclAppInit.obj
+
+GUIOBJS = $(BUILD)\pwb.obj $(BUILD)\rechan.obj \
+	 $(BUILD)\zlib.obj $(BUILD)\winMain.obj $(BUILD)\tclkit.res
+
+all: tclkit-cli tclkit-gui
+tclkit-cli: tclkit-cli.exe
+tclkit-gui: tclkit-gui.exe
+
+tclkit-cli.exe: kit-cli.exe tidy
+	@$(COPY) kit-cli.exe $@
+	-@upx -q9 $@ >NUL
+	kit-cli.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ cli
+
+tclkit-gui.exe: kit-gui.exe tidy
+	@$(COPY) kit-gui.exe $@
+	-@upx -q9 $@ >NUL
+	kit-cli.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ gui
+
+kit-cli.exe: setup tcl $(PARTS) files $(CLIOBJS)
+	@$(CC) $(CFLAGS) -I$(BUILD)/include -DKIT_LITE -DSTATIC_BUILD \
+	  -c ../../kitInit.c -Fo$(BUILD)/kitInit.obj
+	@$(LINK) $(LDFLAGS) -subsystem:console -out:$@ $(CLIOBJS) \
+	  $(BUILD)\kitInit.obj $(BUILD)\vfs.obj \
+	  $(BUILD)\lib\vqtcl4.1\vqtcl4*.lib \
+	  $(BUILD)\lib\zlib.lib \
+	  $(BUILD)\lib\tcl$V*.lib \
+	  $(BUILD)\lib\tcldde1*.lib \
+	  $(BUILD)\lib\tclreg1*.lib $(LIBS)
+
+kit-gui.exe: setup tcl tk $(PARTS) files $(GUIOBJS)
+	@$(CC) $(CFLAGS) -I$(BUILD)/include -DKIT_LITE -DKIT_INCLUDES_TK \
+	  -c ../../kitInit.c -Fo$(BUILD)/kitInit.obj
+	@$(LINK) $(LDFLAGS) -subsystem:windows -out:$@ $(GUIOBJS) \
+	  $(BUILD)\kitInit.obj $(BUILD)\vfs.obj \
+	  $(BUILD)\lib\vqtcl4.1\vqtcl4*.lib \
+	  $(BUILD)\lib\zlib.lib \
+	  $(BUILD)\lib\tcl$V*.lib \
+	  $(BUILD)\lib\tk$V*.lib \
+	  $(BUILD)\lib\tcldde1*.lib \
+	  $(BUILD)\lib\tclreg1*.lib $(LIBS)
+
+tcl: $(BUILD)\lib\tcl$V$X.lib
+$(BUILD)\lib\tcl$V$X.lib:
+	pushd ..\tcl\win & $(MAKE) -f Makefile.vc INSTALLDIR=$(BUILD) \
+	  OPTS=$(OPTS) TMP_DIR=$(BUILD)\tcl \
+	  OUT_DIR=$(BUILD)\tcl release & \
+	  $(MAKE) -f Makefile.vc INSTALLDIR=$(BUILD) \
+	  OPTS=$(OPTS) TMP_DIR=$(BUILD)\tcl \
+	  OUT_DIR=$(BUILD)\tcl install
+
+tk: $(BUILD)\lib\tk$V$X.lib
+$(BUILD)\lib\tk$V$X.lib:
+	pushd ..\tk\win & $(MAKE) -f Makefile.vc INSTALLDIR=$(BUILD) \
+	  TCLDIR=$(BUILD)\..\..\tcl OPTS=$(OPTS) \
+	  TMP_DIR=$(BUILD)\tk OUT_DIR=$(BUILD)\tk \
+	  core $(BUILD)\tk\wish.res install-libraries
+	$(COPY) $(BUILD)\tk\tk$V$X.lib $(BUILD)\lib
+
+vqtcl: $(BUILD)\lib\vqtcl4.1\vqtcl41$X.lib
+$(BUILD)\lib\vqtcl4.1\vqtcl41$X.lib:
+	pushd ..\..\8.x\vqtcl\win & $(MAKE) -f Makefile.vc \
+	  INSTALLDIR=$(BUILD) OPTS=$(OPTS) TMP_DIR=$(BUILD)\vqtcl \
+	  OUT_DIR=$(BUILD)\vqtcl all install
+
+threaddyn: $(BUILD)\lib\threaddyn\thread26.dll
+$(BUILD)\lib\threaddyn\thread26.dll:
+	pushd ..\..\8.x\thread\win\vc & $(MAKE) -f Makefile.vc \
+	  INSTALLDIR=$(BUILD) OPTS=none TMP_DIR=$(BUILD)\threaddyn \
+	  OUT_DIR=$(BUILD)\threaddyn all install
+
+thread: $(BUILD)\lib\thread\thread26$(X:t=).lib
+$(BUILD)\lib\thread\thread26$(X:t=).lib:
+	pushd ..\..\8.x\thread\win\vc & $(MAKE) -f Makefile.vc \
+	  INSTALLDIR=$(BUILD) OPTS=$(OPTS) TMP_DIR=$(BUILD)\thread \
+	  OUT_DIR=$(BUILD)\thread all install
+
+vfs: $(BUILD)\vfs.obj
+$(BUILD)\vfs.obj:
+	$(CC) $(CFLAGS) -DSTATIC_BUILD -I..\tcl\generic -I..\tcl\win \
+	  -I..\..\8.x\tclvfs\generic -c ..\..\8.x\tclvfs\generic\vfs.c \
+	  -Fo$(BUILD)\vfs.obj
+	$(CPY) ..\..\8.x\tclvfs\library $(BUILD)\lib\vfs1.3^\
+
+zlib: $(BUILD)\lib\zlib.lib
+$(BUILD)\lib\zlib.lib:
+	pushd ..\..\8.x\zlib & $(MAKE) -f win32/makefile.msc zlib.lib \
+	  & $(COPY) zlib.lib $(BUILD)\lib\zlib.lib
+
+$(BUILD)\pwb.obj: ..\..\pwb.c
+	$(CC) $(CFLAGS) -I$(BUILD)\include -Fo$@ -c $**
+
+$(BUILD)\rechan.obj: ..\..\rechan.c
+	$(CC) $(CFLAGS) -I$(BUILD)\include -Fo$@ -c $**
+
+$(BUILD)\zlib.obj: ..\..\zlib.c
+	$(CC) $(CFLAGS) -I$(BUILD)\include -I..\..\8.x\zlib -Fo$@ -c $**
+
+$(BUILD)\tclAppInit.obj: ..\tcl\win\tclAppInit.c
+	$(CC) $(CFLAGS) -I$(BUILD)\include \
+	  -DTCL_LOCAL_APPINIT=TclKit_AppInit -Fo$@ -c $**
+
+$(BUILD)\winMain.obj: ..\tk\win\winMain.c
+	$(CC) $(CFLAGS) -I$(BUILD)\include -I..\tk\generic -I..\tk\win \
+	  -DTK_LOCAL_APPINIT=TclKit_AppInit -Fo$@ -c $**
+
+$(BUILD)\tclkit.res: ..\..\tclkit.rc
+	$(COPY) $** $(BUILD)\tk\tclkit.rc
+	$(RC) -fo $@ -r -d STATIC_BUILD=1 -i $(BUILD)\include \
+	  -i $(BUILD)\tk -i $(BUILD)\files -i ..\tk\win\rc \
+	  $(BUILD)\tk\tclkit.rc
+
+.PHONY: setup files tidy clean
+
+files:
+	@$(CPY) ..\..\files $(BUILD)\files^\
+
+setup:
+	@if not exist $(BUILD) mkdir $(BUILD)
+
+tidy:
+	@if exist kit-cli.exp del kit-cli.exp
+	@if exist kit-cli.lib del kit-cli.lib
+	@if exist kit-gui.exp del kit-gui.exp
+	@if exist kit-gui.lib del kit-gui.lib
+
+clean: tidy
+	@if exist build\nul $(RMDIR) build
+	@if exist kit-cli.exe del kit-cli.exe
+	@if exist kit-gui.exe del kit-gui.exe
+
+#EOF

@@ -259,6 +259,19 @@ switch [info sharedlibext] {
   }
 }
 
+# Create package index files for the static extensions.
+# verq registry dde and vfs are handled above or using files/*
+set exts {zlib rechan}
+if {[package vcompare [package provide Tcl] 8.4] == 0} { lappend exts pwb }
+foreach ext $exts {
+    load {} $ext
+    set extdir [file join $vfs lib $ext]
+    file mkdir $extdir
+    set f [open $extdir/pkgIndex.tcl w]
+    puts $f "package ifneeded $ext [package provide $ext] {load {} $ext}"
+    close $f
+}
+
 switch [lindex $argv 1] {
   cli {
     vfscopy $clifiles
