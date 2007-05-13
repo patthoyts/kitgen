@@ -15,6 +15,7 @@ Kitgen is pronounced "kit-chen".
 News
 ----
 
+  * 2007-05-03 : changes in cvs & build structure
   * 2007-04-04 : added kbs.tcl, the Kitgen Build System - see README.kbs
   * 2007-01-11 : fixed a vfs thread issue in boot.tcl, by Jeff Hobbs
   * 2006-12-20 : fixed typo, mention the FFF feedback forum below
@@ -27,6 +28,11 @@ News
   * 2006-11-21 : simpler makefile, tweaked to work with Mingw on Win32
   * 2006-11-19 : first release, tested on Mac OS X and Linux x86 only so far
   
+----
+
+**UPDATE, MAY 2007:** _The build notes below are no longer working.  The CVS repository at equi4.com has been closed and will be replaced by an SVN mirror, hopefully by the end of May 2007.  For now, you can get copies of all the important pieces at [www.equi4.com](http://www.equi4.com/pub/tk/tars/) - the latest source for the "Vlerq" extension is in "vqtcl.tgz" and the latest kitgen source is in "kitgen.tgz". See also the new [mailing list](http://groups.google.com/group/starkit) for more details._
+
+----
 
 Overview
 --------
