@@ -2,7 +2,7 @@ Version 0.8.4
 
 Sources cvs tclral.cvs.sourceforge.net:/cvsroot/tclral .
 #Sources fetch \
-#    http://mesh.dl.sourceforge.net/sourceforge/tclral/tclral-0.8.2.tar.gz
+#    http://mesh.dl.sourceforge.net/sourceforge/tclral/tclral-0.8.4.tar.gz
 
 Build {
     Run sh [Srcdir]/configure --with-tcl=[Libdir]
