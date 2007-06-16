@@ -1,6 +1,6 @@
-Version 2.4.9.6
+Version 2.4.9.7
 
-Sources fetch http://www.equi4.com/pub/mk/metakit-2.4.9.6.tar.gz
+Sources fetch http://www.equi4.com/pub/mk/metakit-2.4.9.7.tar.gz
 
 Build {
     Run sh [Srcdir]/unix/configure --with-tcl=[Incdir]
