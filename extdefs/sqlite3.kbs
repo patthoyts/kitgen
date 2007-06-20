@@ -1,6 +1,6 @@
-Version 3.3.13
+Version 3.4.0
 
-Sources fetch http://www.sqlite.org/sqlite-3_3_13-tea.tar.gz
+Sources fetch http://www.sqlite.org/sqlite-3_4_0-tea.tar.gz
 
 Build {
     Run sh [Srcdir]/configure --with-tcl=[Libdir]
