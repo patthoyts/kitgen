@@ -16,7 +16,7 @@
 
 !ifndef VERSION
 !message *** You must specify the Tcl version. Set VERSION=84 or 85
-!message *** You may also specify SYMBOLS=0|1
+!message *** You may also specify SYMBOLS=0|1 UPX=0|1
 !error
 !else
 V=$(VERSION)
@@ -24,6 +24,16 @@ V=$(VERSION)
 
 !ifndef SYMBOLS
 SYMBOLS=0
+!endif
+
+!ifndef UPX
+!if ![upx -V > NUL]
+!message *** Enabling upx compression of executables
+UPX=1
+!else
+!message *** Disabling upx compression of executables
+UPX=0
+!endif
 !endif
 
 MAKE    = $(MAKE) -nologo
@@ -55,13 +65,41 @@ X       = $(X:x=gx)
 OPTS    = $(OPTS),symbols
 CFLAGS  = -MDd -Od -Zi -D_DEBUG $(CFLAGS)
 LDFLAGS = -debug
+UPXCOMP =
 !else
 CFLAGS  = -MD -O2 -DNDEBUG $(CFLAGS)
 LDFLAGS = -release
+!if $(UPX)
+UPXCOMP = upx -q9 $@ >NUL
+!endif
 !endif
 
+#-------------------------------------------------------------------------
+# MSVC8 (ships with Visual Studio 2005) generates a manifest
+# file that we should link into the binaries. This is how.
+#-------------------------------------------------------------------------
+
+_VC_MANIFEST_EMBED_EXE=
+_VC_MANIFEST_EMBED_DLL=
+VCVER=0
+!if ![echo VCVERSION=_MSC_VER > vercl.x] \
+    && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
+!include vercl.i
+!if $(VCVERSION) >= 1400
+VCVER=8
+_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
+!elseif $(VCVERSION) >= 1300
+VCVER=7
+!elseif $(VCVERSION) >= 1200
+VCVER=6
+!endif
+!endif
+
+#-------------------------------------------------------------------------
+
 CLIOBJS = $(BUILD)\pwb.obj $(BUILD)\rechan.obj \
-	 $(BUILD)\zlib.obj $(BUILD)\tclAppInit.obj
+	 $(BUILD)\zlib.obj $(BUILD)\tclAppInit.obj $(BUILD)\tclkitsh.res
 
 GUIOBJS = $(BUILD)\pwb.obj $(BUILD)\rechan.obj \
 	 $(BUILD)\zlib.obj $(BUILD)\winMain.obj $(BUILD)\tclkit.res
@@ -72,12 +110,12 @@ tclkit-gui: tclkit-gui.exe
 
 tclkit-cli.exe: kit-cli.exe tidy
 	@$(COPY) kit-cli.exe $@
-	-@upx -q9 $@ >NUL
+	-@$(UPXCOMP)
 	kit-cli.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ cli
 
 tclkit-gui.exe: kit-gui.exe tidy
 	@$(COPY) kit-gui.exe $@
-	-@upx -q9 $@ >NUL
+	-@$(UPXCOMP)
 	kit-cli.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ gui
 
 kit-cli.exe: setup tcl $(PARTS) files $(CLIOBJS)
@@ -90,6 +128,7 @@ kit-cli.exe: setup tcl $(PARTS) files $(CLIOBJS)
 	  $(BUILD)\lib\tcl$V*.lib \
 	  $(BUILD)\lib\tcldde1*.lib \
 	  $(BUILD)\lib\tclreg1*.lib $(LIBS)
+	$(_VC_MANIFEST_EMBED_EXE)
 
 kit-gui.exe: setup tcl tk $(PARTS) files $(GUIOBJS)
 	@$(CC) $(CFLAGS) -I$(BUILD)/include -DKIT_LITE -DKIT_INCLUDES_TK \
@@ -102,6 +141,7 @@ kit-gui.exe: setup tcl tk $(PARTS) files $(GUIOBJS)
 	  $(BUILD)\lib\tk$V*.lib \
 	  $(BUILD)\lib\tcldde1*.lib \
 	  $(BUILD)\lib\tclreg1*.lib $(LIBS)
+	$(_VC_MANIFEST_EMBED_EXE)
 
 tcl: $(BUILD)\lib\tcl$V$X.lib
 $(BUILD)\lib\tcl$V$X.lib:
@@ -168,11 +208,15 @@ $(BUILD)\winMain.obj: ..\tk\win\winMain.c
 	  -I..\tcl\generic -I..\tcl\win -I..\tk\generic -I..\tk\win \
 	  -DTK_LOCAL_APPINIT=TclKit_AppInit -Fo$@ -c $**
 
+$(BUILD)\tclkitsh.res: ..\..\tclkit.rc
+	$(RC) -fo $@ -r -d STATIC_BUILD=1 -i $(BUILD)\include \
+	  -i $(BUILD)\files -i ..\tcl\win\rc $**
+
 $(BUILD)\tclkit.res: ..\..\tclkit.rc
 	$(COPY) $** $(BUILD)\tk\tclkit.rc
-	$(RC) -fo $@ -r -d STATIC_BUILD=1 -i $(BUILD)\include \
-	  -i $(BUILD)\tk -i $(BUILD)\files -i ..\tk\win\rc \
-	  $(BUILD)\tk\tclkit.rc
+	$(RC) -fo $@ -r -d STATIC_BUILD=1 -d BASE_NO_TK_ICON=1 \
+	  -d TCLKIT_WITH_TK -i $(BUILD)\include -i $(BUILD)\tk \
+	  -i $(BUILD)\files -i ..\tk\win\rc $(BUILD)\tk\tclkit.rc
 
 .PHONY: setup files tidy clean
 
@@ -187,6 +231,8 @@ tidy:
 	@if exist kit-cli.lib del kit-cli.lib
 	@if exist kit-gui.exp del kit-gui.exp
 	@if exist kit-gui.lib del kit-gui.lib
+	@if exist vercl.i del vercl.i
+	@if exist vercl.x del vercl.x
 
 clean: tidy
 	@if exist build\nul $(RMDIR) build
