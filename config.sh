@@ -88,8 +88,9 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
       echo 'GUI_OPTS   = -lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32'
       echo 'GUI_OPTS  += -lole32 -loleaut32 -luuid'
       echo 'GUI_OPTS  += build/tk/wish.res.o -mwindows'
-      echo 'DYNOBJ     = $(CLIOBJ) $(OUTDIR)/tk/wish.res.o'
-      echo 'GUIOBJ     = $(OBJ) $(OUTDIR)/winMain.o $(OUTDIR)/tk/wish.res.o'
+      echo 'CLIOBJ     = $(OBJ) $(OUTDIR)/tclAppInit.o $(OUTDIR)/tclkitsh.res.o'
+      echo 'DYNOBJ     = $(CLIOBJ) $(OUTDIR)/tkdyn/wish.res.o'
+      echo 'GUIOBJ     = $(OBJ) $(OUTDIR)/winMain.o $(OUTDIR)/tclkit.res.o'
       echo 'PRIV       = install-private-headers'
       echo 'EXE        = .exe'
       plat=win

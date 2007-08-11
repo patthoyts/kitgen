@@ -22,7 +22,7 @@ configs:
 	sh config.sh 8.4/kit-small cli dyn
 	sh config.sh 8.5/base-std thread
 	sh config.sh 8.5/kit-large aqua univ thread allenc allmsgs tzdata
-	
+
 small: configs
 	cd 8.4/kit-small && $(MAKE) && $(MAKE) clean
 

@@ -15,43 +15,47 @@
 EXTDIR = ../../../../8.x
 STATIC = --disable-shared
 OUTDIR = $(shell pwd)/build
-OBJ    = $(OUTDIR)/pwb.o $(OUTDIR)/rechan.o $(OUTDIR)/zlib.o
-CLIOBJ = $(OBJ) $(OUTDIR)/tclAppInit.o
+OBJ    = $(OUTDIR)/pwb$O $(OUTDIR)/rechan$O $(OUTDIR)/zlib$O
+CLIOBJ ?= $(OBJ) $(OUTDIR)/tclAppInit$O
 DYNOBJ ?= $(CLIOBJ)
 GUIOBJ ?= $(CLIOBJ)
 TCLDIR = --with-tcl=../lib --prefix=$(OUTDIR) --exec-prefix=$(OUTDIR)
 STRIP ?= strip
+UPX   ?= :
+O     ?=.o
+A     ?=.a
+SO    ?=.so
 
 tclkit-cli$(EXE): kit-cli$(EXE) ../../setupvfs.tcl build/files
-	cp kit-cli$(EXE) $@ && $(STRIP) $@
+	cp kit-cli$(EXE) $@ && $(STRIP) $@ && $(UPX) $@
 	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ cli
 
-tclkit-dyn$(EXE): kit-dyn$(EXE) build/tkdyn ../../setupvfs.tcl build/files
-	cp kit-dyn$(EXE) $@ && $(STRIP) $@
+tclkit-dyn$(EXE): kit-dyn$(EXE) ../../setupvfs.tcl build/files
+	cp kit-dyn$(EXE) $@ && $(STRIP) $@ $@ && $(UPX) $@
 	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ dyn
 
 tclkit-gui$(EXE): kit-cli$(EXE) kit-gui$(EXE) ../../setupvfs.tcl build/files
-	cp kit-gui$(EXE) $@ && $(STRIP) $@
+	cp kit-gui$(EXE) $@ && $(STRIP) $@ && $(UPX) $@
 	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ gui
 
 kit-cli$(EXE): build/tcl build/tclvfs build/vqtcl build/zlib $(CLIOBJ)
 	$(CC) -o $@ $(CFLAGS) ../../kitInit.c $(CLIOBJ) \
 	  -Ibuild/include -DKIT_LITE -DSTATIC_BUILD \
-	  build/lib/vfs1*/*vfs1*.a build/lib/vqtcl4*/*vqtcl4*.a \
-	  build/lib/libz.a build/lib/libtcl8*.a $(LDFLAGS)
+	  build/lib/vfs1*/*vfs1*$A build/lib/vqtcl4*/*vqtcl4*$A \
+	  build/lib/libz$A build/lib/*tcl8*$A $(LDFLAGS)
 
-kit-dyn$(EXE): build/tcl build/tclvfs build/vqtcl build/zlib $(CLIOBJ)
+kit-dyn$(EXE): build/tcl build/tclvfs build/vqtcl build/zlib build/tkdyn $(CLIOBJ)
 	$(CC) -o $@ $(CFLAGS) ../../kitInit.c $(DYNOBJ) \
 	  -Ibuild/include -DKIT_LITE -DSTATIC_BUILD \
-	  build/lib/vfs1*/*vfs1*.a build/lib/vqtcl4*/*vqtcl4*.a \
-	  build/lib/libz.a build/lib/libtcl8*.a $(LDFLAGS)
+	  build/lib/vfs1*/*vfs1*$A build/lib/vqtcl4*/*vqtcl4*$A \
+	  build/lib/libz$A build/lib/*tcl8*$A $(LDFLAGS)
 
 kit-gui$(EXE): build/tcl build/tk build/tclvfs build/vqtcl build/zlib $(GUIOBJ)
 	$(CC) -o $@ $(CFLAGS) ../../kitInit.c $(GUIOBJ) \
 	  -Ibuild/include -DKIT_LITE -DSTATIC_BUILD \
-	  build/lib/vfs1*/*vfs1*.a build/lib/vqtcl4*/*vqtcl4*.a \
-	  -DKIT_INCLUDES_TK build/lib/libtk8*.a \
-	  build/lib/libz.a build/lib/libtcl8*.a $(LDFLAGS) $(GUI_OPTS)
+	  build/lib/vfs1*/*vfs1*$A build/lib/vqtcl4*/*vqtcl4*$A \
+	  -DKIT_INCLUDES_TK build/lib/libtk8*$A \
+	  build/lib/libz$A build/lib/*tcl8*$A $(LDFLAGS) $(GUI_OPTS)
 
 build/files:
 	mkdir -p $@ && cd $@ && ln -s ../../../../files/* .
@@ -76,7 +80,7 @@ build/tk: build/tcl
 build/tkdyn: build/tcl
 	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
 	  sh ../../../tk/$(PLAT)/configure $(TCLDIR) $(TKDYN_OPTS) && \
-	  $(MAKE) binaries && $(STRIP) $(LDSTRIP) libtk8.* && \
+	  $(MAKE) binaries && $(STRIP) $(LDSTRIP) *tk8*$(SO) && \
 	  $(MAKE) install-binaries install-libraries
 
 build/tclvfs: build/tcl
@@ -111,19 +115,30 @@ distclean: clean
 
 .PHONY: all base clean distclean threaded tidy
 
-$(OUTDIR)/pwb.o:  ../../pwb.c
+$(OUTDIR)/pwb$O:  ../../pwb.c
 	$(CC) -o $@ $(CFLAGS) -DSTATIC_BUILD -Ibuild/include -c $<
 
-$(OUTDIR)/rechan.o: ../../rechan.c
+$(OUTDIR)/rechan$O: ../../rechan.c
 	$(CC) -o $@ $(CFLAGS) -DSTATIC_BUILD -Ibuild/include -c $<
 
-$(OUTDIR)/zlib.o: ../../zlib.c
+$(OUTDIR)/zlib$O: ../../zlib.c
 	$(CC) -o $@ $(CFLAGS) -DSTATIC_BUILD -Ibuild/include -c $<
 
-$(OUTDIR)/tclAppInit.o: ../tcl/$(PLAT)/tclAppInit.c
+$(OUTDIR)/tclAppInit$O: ../tcl/$(PLAT)/tclAppInit.c
 	$(CC) -o $@ $(CFLAGS) -DSTATIC_BUILD -Ibuild/include \
 	  -DTCL_LOCAL_APPINIT=TclKit_AppInit -c $<
 
-$(OUTDIR)/winMain.o: ../tk/$(PLAT)/winMain.c
+$(OUTDIR)/winMain$O: ../tk/$(PLAT)/winMain.c
 	$(CC) -o $@ $(CFLAGS) -DSTATIC_BUILD -Ibuild/include \
 	  -DTK_LOCAL_APPINIT=TclKit_AppInit -c $<
+
+$(OUTDIR)/tclkit.res.o: ../../tclkit.rc
+	cp $< build/tk/tclkit.rc
+	windres -o $@ --define STATIC_BUILD --define TCLKIT_WITH_TK \
+	  --define BASE_NO_TK_ICON --include build/include \
+	  --include build/tk --include ../../files --include ../tk/win/rc \
+	  build/tk/tclkit.rc
+
+$(OUTDIR)/tclkitsh.res.o: ../../tclkit.rc
+	windres -o $@ --define STATIC_BUILD --include build/include \
+	  --include ../../files $<
