@@ -36,6 +36,14 @@ UPX=0
 !endif
 !endif
 
+!ifndef MACHINE
+!if "$(CPU)" == "" || "$(CPU)" == "i386"
+MACHINE		= IX86
+!else
+MACHINE         = $(CPU)
+!endif
+!endif
+
 MAKE    = $(MAKE) -nologo
 CPY     = xcopy /i /y >NUL
 COPY    = copy /y >NUL
@@ -49,14 +57,18 @@ BUILD   = $(MAKEDIR)\build
 PARTS   = vqtcl zlib vfs
 OPTS    = static,msvcrt
 X       = sx
+!ifndef KITOPTS
 KITOPTS = 
+!endif
 LIBS    = user32.lib gdi32.lib comdlg32.lib comctl32.lib \
 	  shell32.lib imm32.lib advapi32.lib
 !else
 PARTS   = vqtcl zlib vfs threaddyn
 OPTS    = static,msvcrt,threads
 X       = tsx
+!ifndef KITOPTS
 KITOPTS = -t
+!endif
 LIBS    = user32.lib gdi32.lib
 !endif
 
@@ -67,11 +79,17 @@ CFLAGS  = -MDd -Od -Zi -D_DEBUG $(CFLAGS)
 LDFLAGS = -debug
 UPXCOMP =
 !else
-CFLAGS  = -MD -O2 -DNDEBUG $(CFLAGS)
-LDFLAGS = -release
+CFLAGS  = -MD -Zi -O2 -DNDEBUG $(CFLAGS)
+LDFLAGS = -debug
 !if $(UPX)
 UPXCOMP = upx -q9 $@ >NUL
 !endif
+!endif
+
+# Avoid 'unresolved external symbol __security_cookie' errors.
+# c.f. http://support.microsoft.com/?id=894573
+!if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
+LIBS    = $(LIBS) bufferoverflowU.lib
 !endif
 
 #-------------------------------------------------------------------------
@@ -83,8 +101,10 @@ _VC_MANIFEST_EMBED_EXE=
 _VC_MANIFEST_EMBED_DLL=
 VCVER=0
 !if ![echo VCVERSION=_MSC_VER > vercl.x] \
-    && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
+    && ![cl -nologo -TC -P vercl.x >NUL]
 !include vercl.i
+!if ![del /q vercl.i vercl.x >NUL]
+!endif
 !if $(VCVERSION) >= 1400
 VCVER=8
 _VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
@@ -150,7 +170,7 @@ $(BUILD)\lib\tcl$V$X.lib:
 	  OUT_DIR=$(BUILD)\tcl release & \
 	  $(MAKE) -f Makefile.vc INSTALLDIR=$(BUILD) \
 	  OPTS=$(OPTS) TMP_DIR=$(BUILD)\tcl \
-	  OUT_DIR=$(BUILD)\tcl install
+	  OUT_DIR=$(BUILD)\tcl install-binaries install-libraries
 
 tk: $(BUILD)\lib\tk$V$X.lib
 $(BUILD)\lib\tk$V$X.lib:
@@ -187,7 +207,7 @@ $(BUILD)\vfs.obj:
 
 zlib: $(BUILD)\lib\zlib.lib
 $(BUILD)\lib\zlib.lib:
-	pushd ..\..\8.x\zlib & $(MAKE) -f win32/makefile.msc zlib.lib \
+	pushd ..\..\8.x\zlib & $(MAKE) -f win32/makefile.msc clean zlib.lib \
 	  & $(COPY) zlib.lib $(BUILD)\lib\zlib.lib
 
 $(BUILD)\pwb.obj: ..\..\pwb.c
