@@ -8,16 +8,18 @@
 
 #include <tcl.h>
 
-/* in tclInt.h: */
-Tcl_Obj* TclGetLibraryPath();
+/* defined in tclInt.h */
+extern Tcl_Obj* TclGetLibraryPath();
+extern void     TclSetLibraryPath (Tcl_Obj*);
+extern void     TclpSetInitialEncodings (void);
 
 /* Support for encodings, from Vince Darley <vince.darley@eurobios.com> */
 static int
-LibraryPathObjCmd(dummy, interp, objc, objv)
-  ClientData dummy;
-  Tcl_Interp *interp;
-  int objc;
-  Tcl_Obj *CONST objv[];
+LibraryPathObjCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *CONST objv[])
 {
   if (objc == 1) {
   	Tcl_SetObjResult(interp, TclGetLibraryPath());
