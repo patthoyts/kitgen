@@ -16,6 +16,7 @@ set encOpt 0
 set msgsOpt 0 
 set threadOpt 0
 set tzOpt 0 
+set customOpt {}
 
 while {1} {
   switch -- [lindex $argv 0] {
@@ -24,6 +25,10 @@ while {1} {
     -m { incr msgsOpt }
     -t { incr threadOpt }
     -z { incr tzOpt }
+    -c {
+        set customOpt [lindex $argv 1]
+        set argv [lrange $argv 1 end]
+    }
     default { break }
   }
   set argv [lrange $argv 1 end]
@@ -31,22 +36,29 @@ while {1} {
 
 if {[llength $argv] != 2} {
   puts stderr "Usage: [file tail [info nameofexe]] -init- [info script]\
-    ?-d? ?-e? ?-m? ?-t? ?-z? destfile (cli|dyn|gui)
-    -d    output some debugging info from this setup script
-    -e    include all encodings i.s.o. 7 basic ones (encodings/)
-    -m    include all localized message files (tcl 8.5, msgs/)
-    -t    include the thread extension as shared lib in vfs
-    -z    include timezone data files (tcl 8.5, tzdata/)"
+    ?-d? ?-e? ?-m? ?-t? ?-z? ?-c path? destfile (cli|dyn|gui)
+    -d        output some debugging info from this setup script
+    -e        include all encodings i.s.o. 7 basic ones (encodings/)
+    -m        include all localized message files (tcl 8.5, msgs/)
+    -t        include the thread extension as shared lib in vfs
+    -z        include timezone data files (tcl 8.5, tzdata/)
+    -c path   include a custom script for additional vfs setup"
   exit 1
 }
+
+set lite [expr {![catch {load {} vlerq}]}]
 
 load {} vfs ;# vlerq is already loaded by now
 
 # map of proper version numbers to replace @ markers in paths given to vfscopy
 # this relies on having all necessary extensions already loaded at this point
 set versmap [list tcl8@ tcl$tcl_version tk8@ tk$tcl_version \
-                  vfs1@ vfs[package require vfs] \
-                  vqtcl4@ vqtcl[package require vlerq]]
+                 vfs1@ vfs[package require vfs]]
+if {$lite} {
+    lappend versmap vqtcl4@ vqtcl[package require vlerq] 
+} else {
+    lappend versmap Mk4tcl@ Mk4tcl[package require Mk4tcl]
+}
                
 if {$debugOpt} {
   puts "Starting [info script]"
@@ -62,7 +74,11 @@ set tcl_library ../tcl/library
 source ../tcl/library/init.tcl ;# for tcl::CopyDirectory
 source ../../8.x/tclvfs/library/vfsUtils.tcl
 source ../../8.x/tclvfs/library/vfslib.tcl ;# override vfs::memchan/vfsUtils.tcl
-source ../../8.x/vqtcl/library/m2mvfs.tcl
+if {$lite} {
+    source ../../8.x/vqtcl/library/m2mvfs.tcl
+} else {
+    source ../../8.x/tclvfs/library/mk4vfs.tcl
+}
 
 set clifiles {
   boot.tcl
@@ -82,11 +98,15 @@ set clifiles {
   lib/vfs1@/vfslib.tcl
   lib/vfs1@/vfsUtils.tcl
   lib/vfs1@/zipvfs.tcl
-  lib/vqtcl4@/m2mvfs.tcl
-  lib/vqtcl4@/mkclvfs.tcl
-  lib/vqtcl4@/mklite.tcl
-  lib/vqtcl4@/pkgIndex.tcl
-  lib/vqtcl4@/ratcl.tcl
+}
+
+if {$lite} {
+    lappend clifiles \
+        lib/vqtcl4@/m2mvfs.tcl \
+        lib/vqtcl4@/mkclvfs.tcl \
+        lib/vqtcl4@/mklite.tcl \
+        lib/vqtcl4@/pkgIndex.tcl \
+        lib/vqtcl4@/ratcl.tcl
 }
 
 set guifiles {
@@ -220,8 +240,26 @@ proc vfscopy {argv} {
   }
 }
 
+proc staticpkg {pkg {ver {}} {init {}}} {
+    global vfs
+    if {$ver eq {}} {
+        load {} $pkg
+        set ver [package provide $pkg]
+    }
+    set extdir [file join $vfs lib $pkg]
+    file mkdir $extdir
+    if {$init eq {}} {set init $pkg}
+    set f [open $extdir/pkgIndex.tcl w]
+    puts $f "package ifneeded $pkg $ver {load {} $init}"
+    close $f
+}
+
 set vfs [lindex $argv 0]
-vfs::m2m::Mount $vfs $vfs
+if {$lite} {
+    vfs::m2m::Mount $vfs $vfs
+} else {
+    vfs::mk4::Mount $vfs $vfs
+}
 
 switch [info sharedlibext] {
   .dll {
@@ -264,12 +302,7 @@ switch [info sharedlibext] {
 set exts {zlib rechan}
 if {[package vcompare [package provide Tcl] 8.4] == 0} { lappend exts pwb }
 foreach ext $exts {
-    load {} $ext
-    set extdir [file join $vfs lib $ext]
-    file mkdir $extdir
-    set f [open $extdir/pkgIndex.tcl w]
-    puts $f "package ifneeded $ext [package provide $ext] {load {} $ext}"
-    close $f
+    staticpkg $ext
 }
 
 switch [lindex $argv 1] {
@@ -289,6 +322,10 @@ switch [lindex $argv 1] {
     puts stderr "Unknown type, must be one of: cli, dyn, gui"
     exit 1
   }
+}
+
+if {$customOpt ne {}} {
+    source $customOpt
 }
 
 vfs::unmount $vfs
