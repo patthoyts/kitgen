@@ -27,6 +27,7 @@ while test $# != 0
 make=$path/Makefile
 mach=`uname`
 plat=unix
+upx=`which upx`
 
 echo "Configuring $make for $mach."
 mkdir -p $path
@@ -93,6 +94,7 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
       echo 'GUIOBJ     = $(OBJ) $(OUTDIR)/winMain.o $(OUTDIR)/tclkit.res.o'
       echo 'PRIV       = install-private-headers'
       echo 'EXE        = .exe'
+      [ -x $upx ] && echo "UPX        = $upx"
       plat=win
       ;;
 
