@@ -33,6 +33,7 @@
 /* defined in tclInt.h */
 extern Tcl_Obj* TclGetStartupScriptPath();
 extern void TclSetStartupScriptPath(Tcl_Obj*);
+extern char* TclSetPreInitScript (char*);
 
 Tcl_AppInitProc	Pwb_Init, Rechan_Init, Vfs_Init, Zlib_Init;
 #ifdef KIT_LITE
@@ -43,9 +44,14 @@ Tcl_AppInitProc	Mk4tcl_Init;
 #ifdef TCL_THREADS
 Tcl_AppInitProc	Thread_Init;
 #endif
+#ifdef KIT_INCLUDES_ITCL
+Tcl_AppInitProc	Itcl_Init;
+#endif
 #ifdef _WIN32
 Tcl_AppInitProc	Dde_Init, Registry_Init;
 #endif
+
+/* insert custom prototypes here */
 
 #ifdef WIN32
 #define DEV_NULL "NUL"
@@ -146,6 +152,9 @@ TclKit_AppInit(Tcl_Interp *interp)
      */
     TclKit_InitStdChannels();
 
+#ifdef KIT_INCLUDES_ITCL
+    Tcl_StaticPackage(0, "Itcl", Itcl_Init, NULL);
+#endif
 #ifdef KIT_LITE
     Tcl_StaticPackage(0, "vlerq", Vlerq_Init, Vlerq_SafeInit);
 #else
@@ -167,6 +176,8 @@ TclKit_AppInit(Tcl_Interp *interp)
 #ifdef KIT_INCLUDES_TK
     Tcl_StaticPackage(0, "Tk", Tk_Init, Tk_SafeInit);
 #endif
+
+    /* insert custom packages here */
 
     /* the tcl_rcFileName variable only exists in the initial interpreter */
 #ifdef _WIN32
@@ -216,10 +227,16 @@ TclKit_AppInit(Tcl_Interp *interp)
       	Tcl_DecrRefCount(evobjPtr);
     }
 
+#if 1 /* jcw's original code */
     TclSetPreInitScript(preInitCmd);
     if ((Tcl_EvalEx(interp, appInitCmd, -1, TCL_EVAL_GLOBAL) == TCL_ERROR)
-	    || (Tcl_Init(interp) == TCL_ERROR))
+           || (Tcl_Init(interp) == TCL_ERROR))
         goto error;
+#else /* what I am using */
+    TclSetPreInitScript(appInitCmd);
+    if (Tcl_Init(interp) == TCL_ERROR)
+        goto error;
+#endif
 
 #if defined(KIT_INCLUDES_TK) && defined(_WIN32)
     if (Tk_Init(interp) == TCL_ERROR)
@@ -263,7 +280,7 @@ TclKit_SetKitPath(CONST char *kitPath)
      * than 'info nameofexecutable'.
      */
     if (kitPath) {
-      	int len = strlen(kitPath);
+      	int len = (int)strlen(kitPath);
       	if (tclKitPath) {
       	    ckfree(tclKitPath);
       	}
