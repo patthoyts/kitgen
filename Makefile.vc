@@ -36,14 +36,6 @@ UPX=0
 !endif
 !endif
 
-!ifndef MACHINE
-!if "$(CPU)" == "" || "$(CPU)" == "i386"
-MACHINE		= IX86
-!else
-MACHINE         = $(CPU)
-!endif
-!endif
-
 MAKE    = $(MAKE) -nologo
 CPY     = xcopy /i /y >NUL
 COPY    = copy /y >NUL
@@ -69,7 +61,7 @@ X       = tsx
 !ifndef KITOPTS
 KITOPTS = -t
 !endif
-LIBS    = user32.lib gdi32.lib
+LIBS    = user32.lib gdi32.lib ws2_32.lib
 !endif
 
 !if $(SYMBOLS)
@@ -86,14 +78,8 @@ UPXCOMP = upx -q9 $@ >NUL
 !endif
 !endif
 
-# Avoid 'unresolved external symbol __security_cookie' errors.
-# c.f. http://support.microsoft.com/?id=894573
-!if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
-LIBS    = $(LIBS) bufferoverflowU.lib
-!endif
-
 #-------------------------------------------------------------------------
-# MSVC8 (ships with Visual Studio 2005) generates a manifest
+# MSVC > 8 (Visual Studio 2005+) generates a manifest
 # file that we should link into the binaries. This is how.
 #-------------------------------------------------------------------------
 
@@ -105,14 +91,34 @@ VCVER=0
 !include vercl.i
 !if ![del /q vercl.i vercl.x >NUL]
 !endif
-!if $(VCVERSION) >= 1400
+!if $(VCVERSION) >= 1500
+VCVER=9
+!elseif $(VCVERSION) >= 1400
 VCVER=8
-_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
-_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
 !elseif $(VCVERSION) >= 1300
 VCVER=7
 !elseif $(VCVERSION) >= 1200
 VCVER=6
+!endif
+!endif
+!if $(VCVERSION) >= 1400
+_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
+!endif
+
+!ifndef MACHINE
+!if "$(CPU)" == "" || "$(CPU)" == "i386"
+MACHINE		= IX86
+!else
+MACHINE         = $(CPU)
+!endif
+!endif
+
+# Avoid 'unresolved external symbol __security_cookie' errors.
+# c.f. http://support.microsoft.com/?id=894573
+!if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
+!if $(VCVERSION) >= 1400 && $(VCVERSION) < 1500
+LIBS    = $(LIBS) bufferoverflowU.lib
 !endif
 !endif
 
