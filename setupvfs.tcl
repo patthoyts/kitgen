@@ -305,6 +305,13 @@ foreach ext $exts {
     staticpkg $ext
 }
 
+if {[lsearch [info loaded] {{} Itcl}] != -1} {
+    catch {load {} Itcl}
+    lappend versmap itcl3@ itcl[package provide Itcl]
+    lappend clifiles lib/itcl3@/itcl.tcl
+    staticpkg Itcl [package provide Itcl]
+}
+
 switch [lindex $argv 1] {
   cli {
     vfscopy $clifiles
