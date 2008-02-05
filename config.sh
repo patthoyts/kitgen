@@ -14,7 +14,7 @@ path=$root/$base
 if test ! -d $root
   then echo "error: directory '$root' does not exist"; exit 1; fi
 
-for v in allenc allmsgs aqua b64 cli dyn gui ppc \
+for v in allenc allmsgs aqua b64 cli dyn gui ppc mk \
           gcov gprof sym thread tzdata univ x86
   do eval $v=0; done
 
@@ -99,8 +99,16 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
       ;;
 
     SunOS)
+      echo "CFLAGS    += -I/usr/openwin/include"
       echo "LDFLAGS    = -ldl -lsocket -lnsl -lm"
-      echo "GUI_OPTS   = -lX11 -lXext"
+      if [ $root = "8.5" ]; then
+        echo "GUI_OPTS   = -L/usr/openwin/lib -L/usr/sfw/lib -lXft -lfreetype -lz -lfontconfig -lXrender -lX11 -lXext"
+      else
+        echo "GUI_OPTS   = -L/usr/openwin/lib -lX11 -lXext"
+      fi
+      case $b64 in 1)
+        echo "CFLAGS += -m64" ;;
+      esac
       ;;
 
     *) echo "warning: no settings known for '$mach'" >&2 ;;
@@ -114,7 +122,10 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
     echo "TCL_OPTS   += --enable-64bit" 
     echo "TK_OPTS    += --enable-64bit" 
     echo "VFS_OPTS   += --enable-64bit" 
-    echo "VLERQ_OPTS += --enable-64bit" ;; 
+    echo "VLERQ_OPTS += --enable-64bit"
+    echo "MK_OPTS    += --enable-64bit"
+    echo "ITCL_OPTS  += --enable-64bit"
+    ;; 
   esac
 
   #case $verbose in 1) kitopts=" -d" ;; esac
@@ -153,12 +164,19 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
     echo "TKDYN_OPTS     += --enable-symbols"
     echo "VFS_OPTS       += --enable-symbols"
     echo "VLERQ_OPTS     += --enable-symbols"
+    echo "MK_OPTS        += --enable-symbols"
+    echo "ITCL_OPTS      += --enable-symbols"
     echo ;;
   esac
   
   case $cli in 1) targets="$targets tclkit-cli" ;; esac
   case $dyn in 1) targets="$targets tclkit-dyn" ;; esac
   case $gui in 1) targets="$targets tclkit-gui" ;; esac
+  case $mk in 
+    1)  case $cli in 1) targets="$targets tclkitsh" ;; esac
+        case $gui in 1) targets="$targets tclkit" ;; esac
+        ;; 
+  esac
 
   case $thread in
     1) echo "all: threaded$targets" ;;
@@ -170,6 +188,9 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
     echo "tclkit-cli: tclkit-cli.exe"
     echo "tclkit-dyn: tclkit-dyn.exe"
     echo "tclkit-gui: tclkit-gui.exe"
+    case $mk in 1) echo "tclkitsh: tclkitsh.exe"
+                   echo "tclkit: tclkit.exe" ;;
+    esac
   esac
   
   echo
@@ -192,6 +213,11 @@ case $verbose in 1)
   case $cli in 1) echo "    $path/tclkit-cli   (command-line)" ;; esac
   case $dyn in 1) echo "    $path/tclkit-dyn   (Tk as shared lib)" ;; esac
   case $gui in 1) echo "    $path/tclkit-gui   (Tk linked statically)" ;; esac
+  case $mk in 1)
+      case $cli in 1) echo "    $path/tclkitsh     (old-style command line)" ;; esac
+      case $gui in 1) echo "    $path/tclkit       (old-style with Tk)" ;; esac
+      ;;
+  esac
   echo
   echo "To remove all intermediate builds, use 'make clean'."
   echo "To remove all executables as well, use 'make distclean'."

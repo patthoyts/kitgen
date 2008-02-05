@@ -142,3 +142,50 @@ $(OUTDIR)/tclkit.res.o: ../../tclkit.rc
 $(OUTDIR)/tclkitsh.res.o: ../../tclkit.rc
 	windres -o $@ --define STATIC_BUILD --include build/include \
 	  --include ../../files $<
+
+#-------------------------------------------------------------------------
+# Old-style builds -
+#	This section produces an old-style tclkit and tclkitsh that use 
+#	metakit and include incr-tcl statically linked in.
+
+tclkitsh$(EXE): kitsh$(EXE) ../../setupvfs.tcl build/files
+	cp kitsh$(EXE) $@ && $(STRIP) $@ && $(UPX) $@
+	./kitsh -init- ../../setupvfs.tcl $(KIT_OPTS) $@ cli
+
+tclkit$(EXE): kitsh$(EXE) kit$(EXE) ../../setupvfs.tcl build/files
+	cp kit$(EXE) $@ && $(STRIP) $@ && $(UPX) $@
+	./kitsh -init- ../../setupvfs.tcl $(KIT_OPTS) $@ gui
+
+kitsh$(EXE): build/tcl build/tclvfs build/mk build/itcl build/zlib $(CLIOBJ)
+	$(CC) -o $(OUTDIR)/kitInit$O $(CFLAGS) -DSTATIC_BUILD \
+	  -DKIT_INCLUDES_ITCL \
+	  -Ibuild/include -c ../../kitInit.c
+	$(CXX) -o $@ $(CFLAGS) $(OUTDIR)/kitInit$O $(CLIOBJ) \
+	  -Ibuild/include -DSTATIC_BUILD \
+	  build/lib/vfs1*/*vfs1*$A build/lib/Mk4tcl*/*Mk4tcl*$A \
+	  build/lib/itcl*/*itcl3*$A \
+	  build/lib/libz$A build/lib/*tcl8*$A $(LDFLAGS)
+
+kit$(EXE): build/tcl build/tk build/tclvfs build/mk build/itcl build/zlib $(GUIOBJ)
+	$(CC) -o $(OUTDIR)/kitInit$O $(CFLAGS) -DSTATIC_BUILD \
+	  -DKIT_INCLUDES_ITCL -DKIT_INCLUDES_TK \
+	  -Ibuild/include -c ../../kitInit.c
+	$(CXX) -o $@ $(CFLAGS) $(OUTDIR)/kitInit$O $(GUIOBJ) \
+	  -Ibuild/include -DSTATIC_BUILD \
+	  build/lib/vfs1*/*vfs1*$A build/lib/Mk4tcl*/*Mk4tcl*$A \
+	  build/lib/libtk8*$A build/lib/itcl*/*itcl3*$A \
+	  build/lib/libz$A build/lib/*tcl8*$A $(LDFLAGS) $(GUI_OPTS)
+
+build/mk: build/tcl
+	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
+	  sh $(EXTDIR)/mk/tcl/configure $(STATIC) $(TCLDIR) $(MK_OPTS) && \
+	  $(MAKE) install-binaries install-libraries
+
+build/itcl: build/tcl
+	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
+	  sh $(EXTDIR)/itcl/configure $(STATIC) $(TCLDIR) $(ITCL_OPTS) && \
+	  $(MAKE) install-binaries install-libraries
+
+# end
+#-------------------------------------------------------------------------
+
