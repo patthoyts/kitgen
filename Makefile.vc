@@ -130,9 +130,13 @@ CLIOBJS = $(BUILD)\pwb.obj $(BUILD)\rechan.obj \
 GUIOBJS = $(BUILD)\pwb.obj $(BUILD)\rechan.obj \
 	 $(BUILD)\zlib.obj $(BUILD)\winMain.obj $(BUILD)\tclkit.res
 
-all: tclkit-cli tclkit-gui
+all: lite heavy
+lite: tclkit-cli tclkit-gui
+heavy: tclkitsh tclkit
 tclkit-cli: tclkit-cli.exe
 tclkit-gui: tclkit-gui.exe
+tclkitsh:   tclkitsh.exe
+tclkit:     tclkit.exe
 
 tclkit-cli.exe: kit-cli.exe tidy
 	@$(COPY) kit-cli.exe $@
@@ -162,6 +166,48 @@ kit-gui.exe: setup tcl tk $(PARTS) files $(GUIOBJS)
 	@$(LINK) $(LDFLAGS) -subsystem:windows -out:$@ $(GUIOBJS) \
 	  $(BUILD)\kitInit.obj $(BUILD)\vfs.obj \
 	  $(BUILD)\lib\vqtcl4.1\vqtcl4*.lib \
+	  $(BUILD)\lib\zlib.lib \
+	  $(BUILD)\lib\tcl$V*.lib \
+	  $(BUILD)\lib\tk$V*.lib \
+	  $(BUILD)\lib\tcldde1*.lib \
+	  $(BUILD)\lib\tclreg1*.lib $(LIBS)
+	$(_VC_MANIFEST_EMBED_EXE)
+
+#-------------------------------------------------------------------------
+
+tclkitsh.exe: kitsh.exe tidy
+	@$(COPY) kitsh.exe $@
+	-@$(UPXCOMP)
+	kitsh.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ cli
+
+tclkit.exe: kitsh.exe kit.exe tidy
+	@$(COPY) kit.exe $@
+	-@$(UPXCOMP)
+	kitsh.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ gui
+
+kitsh.exe: setup tcl mk itcl $(PARTS:vqtcl=) files $(CLIOBJS)
+	$(CC) $(CFLAGS) -I$(BUILD)/include -DSTATIC_BUILD \
+	  -DKIT_INCLUDES_ITCL -c ../../kitInit.c -Fo$(BUILD)/kitInit.obj
+	$(LINK) $(LDFLAGS) -subsystem:console -out:$@ $(CLIOBJS) \
+	  $(BUILD)\kitInit.obj $(BUILD)\vfs.obj \
+	  $(BUILD)\mk4tcl.obj $(BUILD)\mk4too.obj \
+	  $(BUILD)\lib\mk4vc*.lib \
+	  $(BUILD)\lib\itcl3.4\itcl3*.lib \
+	  $(BUILD)\lib\zlib.lib \
+	  $(BUILD)\lib\tcl$V*.lib \
+	  $(BUILD)\lib\tcldde1*.lib \
+	  $(BUILD)\lib\tclreg1*.lib $(LIBS)
+	$(_VC_MANIFEST_EMBED_EXE)
+
+kit.exe: setup tcl tk mk itcl $(PARTS:vqtcl=) files $(GUIOBJS)
+	$(CC) $(CFLAGS) -I$(BUILD)/include -DSTATIC_BUILD \
+	  -DKIT_INCLUDES_ITCL -DKIT_INCLUDES_TK \
+	  -c ../../kitInit.c -Fo$(BUILD)/kitInit.obj
+	$(LINK) $(LDFLAGS) -subsystem:windows -out:$@ $(GUIOBJS) \
+	  $(BUILD)\kitInit.obj $(BUILD)\vfs.obj \
+	  $(BUILD)\mk4tcl.obj $(BUILD)\mk4too.obj \
+	  $(BUILD)\lib\mk4vc*.lib \
+	  $(BUILD)\lib\itcl3.4\itcl3*.lib \
 	  $(BUILD)\lib\zlib.lib \
 	  $(BUILD)\lib\tcl$V*.lib \
 	  $(BUILD)\lib\tk$V*.lib \
@@ -216,6 +262,24 @@ $(BUILD)\lib\zlib.lib:
 	pushd ..\..\8.x\zlib & $(MAKE) -f win32/makefile.msc clean zlib.lib \
 	  & $(COPY) zlib.lib $(BUILD)\lib\zlib.lib
 
+itcl: $(BUILD)\itcl\itcl34$(X:t=).lib
+$(BUILD)\itcl\itcl34$(X:t=).lib:
+	pushd ..\..\8.x\itcl\win & $(MAKE) -f Makefile.vc \
+	  INSTALLDIR=$(BUILD) TCLDIR=$(BUILD)\..\..\tcl \
+	  OPTS=$(OPTS) TMP_DIR=$(BUILD)\itcl \
+	  OUT_DIR=$(BUILD)\itcl all install-binaries install-libraries
+
+mk: $(BUILD)\lib\mk4vc$(VCVER)0$(X:t=).lib
+$(BUILD)\lib\mk4vc$(VCVER)0$(X:t=).lib:
+	pushd ..\..\8.x\mk\win & $(MAKE) -f Makefile.vc \
+	  OPTS=$(OPTS) TMP_DIR=$(BUILD)\mk \
+	  OUT_DIR=$(BUILD)\mk mklib
+	$(CC) $(CFLAGS) -I$(BUILD)/include -I../../8.x/mk/include \
+	  -c ../../8.x/mk/tcl/mk4tcl.cpp -Fo$(BUILD)/mk4tcl.obj
+	$(CC) $(CFLAGS) -I$(BUILD)/include -I../../8.x/mk/include \
+	  -c ../../8.x/mk/tcl/mk4too.cpp -Fo$(BUILD)/mk4too.obj
+	$(COPY) $(BUILD)\mk\mk4vc$(VCVER)0$(X:t=).lib $@
+
 $(BUILD)\pwb.obj: ..\..\pwb.c
 	$(CC) $(CFLAGS) -I$(BUILD)\include -Fo$@ -c $**
 
@@ -253,16 +317,32 @@ setup:
 	@if not exist $(BUILD) mkdir $(BUILD)
 
 tidy:
-	@if exist kit-cli.exp del kit-cli.exp
-	@if exist kit-cli.lib del kit-cli.lib
-	@if exist kit-gui.exp del kit-gui.exp
-	@if exist kit-gui.lib del kit-gui.lib
-	@if exist vercl.i del vercl.i
-	@if exist vercl.x del vercl.x
+	@echo Tidying...
+	-@if exist kit-cli.exp del kit-cli.exp
+	-@if exist kit-cli.lib del kit-cli.lib
+	-@if exist kit-cli.ilk del kit-cli.ilk
+	-@if exist kit-gui.exp del kit-gui.exp
+	-@if exist kit-gui.lib del kit-gui.lib
+	-@if exist kit-gui.ilk del kit-gui.ilk
+	-@if exist kitsh.exp del kitsh.exp
+	-@if exist kitsh.lib del kitsh.lib
+	-@if exist kitsh.ilk del kitsh.ilk
+	-@if exist kit.exp del kit.exp
+	-@if exist kit.lib del kit.lib
+	-@if exist kit.ilk del kit.ilk
+	-@if exist vercl.i del vercl.i
+	-@if exist vercl.x del vercl.x
 
 clean: tidy
 	@if exist build\nul $(RMDIR) build
 	@if exist kit-cli.exe del kit-cli.exe
+	@if exist kit-cli.pdb del kit-cli.pdb
 	@if exist kit-gui.exe del kit-gui.exe
+	@if exist kit-gui.pdb del kit-gui.pdb
+	@if exist kitsh.exe del kitsh.exe
+	@if exist kitsh.pdb del kitsh.pdb
+	@if exist kit.exe del kit.exe
+	@if exist kit.pdb del kit.pdb
+	@if exist vc$(VCVER)0.pdb del vc$(VCVER)0.pdb
 
 #EOF
