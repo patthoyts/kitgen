@@ -129,7 +129,6 @@ set guifiles {
   lib/tk8@/optMenu.tcl
   lib/tk8@/palette.tcl
   lib/tk8@/panedwindow.tcl
-  lib/tk8@/pkgIndex.tcl
   lib/tk8@/prolog.ps
   lib/tk8@/safetk.tcl
   lib/tk8@/scale.tcl
@@ -312,6 +311,12 @@ if {[lsearch [info loaded] {{} Itcl}] != -1} {
     staticpkg Itcl [package provide Itcl]
 }
 
+if {[package vcompare [package provide Tcl] 8.4] == 0} {
+    set tkver $tcl_version
+} else {
+    set tkver [info patchlevel]
+}
+
 switch [lindex $argv 1] {
   cli {
     vfscopy $clifiles
@@ -319,11 +324,20 @@ switch [lindex $argv 1] {
   gui {
     vfscopy $clifiles
     vfscopy $guifiles
+    set fn $vfs/[string map $versmap lib/tk8@/pkgIndex.tcl]
+    set f [open $fn w]
+    puts $f "package ifneeded Tk $tkver {load {} Tk}"
+    close $f
   }
   dyn {
     vfscopy $clifiles
     vfscopy $guifiles
     vfscopy lib/libtk$tcl_version[info sharedlibext]
+    set f [open $vfs/[string map $versmap lib/tk8@/pkgIndex.tcl] w]
+    puts $f "package ifneeded Tk $tkver\
+      \[list load \[file join \[list \$dir\] ..\
+      libtk$tcl_version\[info sharedlibext\]\] Tk\]"
+    close $f
   }
   default {
     puts stderr "Unknown type, must be one of: cli, dyn, gui"
