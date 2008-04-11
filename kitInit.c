@@ -227,12 +227,12 @@ TclKit_AppInit(Tcl_Interp *interp)
       	Tcl_DecrRefCount(evobjPtr);
     }
 
-#if 1 /* jcw's original code */
+#ifdef KIT_DLL
     TclSetPreInitScript(preInitCmd);
     if ((Tcl_EvalEx(interp, appInitCmd, -1, TCL_EVAL_GLOBAL) == TCL_ERROR)
            || (Tcl_Init(interp) == TCL_ERROR))
         goto error;
-#else /* what I am using */
+#else /* not a dll */
     TclSetPreInitScript(appInitCmd);
     if (Tcl_Init(interp) == TCL_ERROR)
         goto error;
