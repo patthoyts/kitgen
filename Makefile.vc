@@ -4,19 +4,36 @@
 #
 # To make use of this build system create a build subdirectory 
 # 8.4\kit-msvc or 8.5\kit-msvc and create a Makefile that contains only
+#
 #  !include ..\..\Makefile.vc
-# Ensure that 8.4\tcl and 8.4\tk contain copies of the tcl and tk sources
-# (or 8.5\* if you are using this version)
+#  all: lite heavy
+#
+# Ensure that 8.5\tcl and 8.5\tk contain copies of the tcl and tk sources
+# (or 8.4\*, or 8.6\* if you are using another version)
+#
 # Finally change to this build directory and build it all using 
-#  nmake -f makefile.vc VERSION=84
+#  nmake -nologo VERSION=85
 #
 # If you want to create a symbols/debug build then add SYMBOLS=1
 #
+# For example:
 #
+#  mkdir 8.5
+#  mkdir 8.5\win32-ix86
+#  echo !include ..\..\Makefile.vc  > 8.5\win32-ix86\Makefile
+#  echo all: lite heavy            >> 8.5\win32-ix86\Makefile
+#  cd 8.5
+#  cvs -d:pserver:anonymous@tcl.cvs.sourceforge.net:/cvsroot/tcl co -r core-8-5-branch tcl
+#  cvs -d:pserver:anonymous@tktoolkit.cvs.sourceforge.net:/cvsroot/tktoolkit co -r core-8-5-branch tk
+#  cd win32-ix86
+#  nmake -nologo VERSION=85
+#
+# You do not have to use cvs. You could just unpack a source archive in the
+# correct location.
 
 !ifndef VERSION
-!message *** You must specify the Tcl version. Set VERSION=84 or 85
-!message *** You may also specify SYMBOLS=0|1 UPX=0|1
+!message *** You must specify the Tcl version. Set VERSION=84, 85 or 86
+!message *** You may also specify SYMBOLS=0|1 and/or UPX=0|1
 !error
 !else
 V=$(VERSION)
@@ -130,7 +147,7 @@ CLIOBJS = $(BUILD)\pwb.obj $(BUILD)\rechan.obj \
 GUIOBJS = $(BUILD)\pwb.obj $(BUILD)\rechan.obj \
 	 $(BUILD)\zlib.obj $(BUILD)\winMain.obj $(BUILD)\tclkit.res
 
-all: lite heavy
+#all: lite heavy
 lite: tclkit-cli tclkit-gui
 heavy: tclkitsh tclkit
 tclkit-cli: tclkit-cli.exe
