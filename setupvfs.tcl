@@ -93,11 +93,13 @@ set clifiles {
   lib/tcl8@/tclIndex
   lib/tcl8@/word.tcl
   lib/vfs1@/mk4vfs.tcl
+  lib/vfs1@/mk4vfscompat.tcl
   lib/vfs1@/pkgIndex.tcl
   lib/vfs1@/starkit.tcl
   lib/vfs1@/vfslib.tcl
   lib/vfs1@/vfsUtils.tcl
   lib/vfs1@/zipvfs.tcl
+  lib/vfs1@/zipvfscompat.tcl
 }
 
 if {$lite} {
@@ -149,8 +151,19 @@ if {$encOpt} {
   lappend clifiles lib/tcl8@/encoding/ascii.enc \
                    lib/tcl8@/encoding/cp1252.enc \
                    lib/tcl8@/encoding/iso8859-1.enc \
-                   lib/tcl8@/encoding/iso8859-15.enc \
                    lib/tcl8@/encoding/iso8859-2.enc \
+                   lib/tcl8@/encoding/iso8859-3.enc \
+                   lib/tcl8@/encoding/iso8859-4.enc \
+                   lib/tcl8@/encoding/iso8859-5.enc \
+                   lib/tcl8@/encoding/iso8859-6.enc \
+                   lib/tcl8@/encoding/iso8859-7.enc \
+                   lib/tcl8@/encoding/iso8859-8.enc \
+                   lib/tcl8@/encoding/iso8859-9.enc \
+                   lib/tcl8@/encoding/iso8859-10.enc \
+                   lib/tcl8@/encoding/iso8859-13.enc \
+                   lib/tcl8@/encoding/iso8859-14.enc \
+                   lib/tcl8@/encoding/iso8859-15.enc \
+                   lib/tcl8@/encoding/iso8859-16.enc \
                    lib/tcl8@/encoding/koi8-r.enc \
                    lib/tcl8@/encoding/macRoman.enc
 }
