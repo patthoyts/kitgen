@@ -227,6 +227,19 @@ TclKit_AppInit(Tcl_Interp *interp)
       	Tcl_DecrRefCount(evobjPtr);
     }
 
+#if 10 * TCL_MAJOR_VERSION + TCL_MINOR_VERSION > 84
+    {
+	Tcl_DString encodingName;
+	Tcl_GetEncodingNameFromEnvironment(&encodingName);
+	if (strcmp(Tcl_DStringValue(&encodingName), Tcl_GetEncodingName(NULL))) {
+	    /* fails, so we set a variable and do it in the boot.tcl script */
+	    Tcl_SetSystemEncoding(NULL, Tcl_DStringValue(&encodingName));
+	}
+	Tcl_SetVar(interp, "tclkit_system_encoding", Tcl_DStringValue(&encodingName), 0);
+	Tcl_DStringFree(&encodingName);
+    }
+#endif
+
 #ifdef KIT_DLL
     TclSetPreInitScript(preInitCmd);
     if ((Tcl_EvalEx(interp, appInitCmd, -1, TCL_EVAL_GLOBAL) == TCL_ERROR)

@@ -1,7 +1,7 @@
 proc tclInit {} {
   rename tclInit {}
 
-  global auto_path tcl_library tcl_libPath tcl_version
+  global auto_path tcl_library tcl_libPath tcl_version tclkit_system_encoding
   
   set noe [info nameofexecutable]
 
@@ -84,7 +84,13 @@ proc tclInit {} {
     } else {
       encoding dirs [list [file join [info library] encoding]] ;# TIP 258
     }
-
+    # if the C code passed us a system encoding, apply it here.
+    if {[info exists tclkit_system_encoding]} {
+      # It is possible the chosen encoding is unavailable in which case
+      # we will be left with 'identity' to be handled below.
+      catch {encoding system $tclkit_system_encoding}
+      unset tclkit_system_encoding
+    }
     # fix system encoding, if it wasn't properly set up (200207.004 bug)
     if {[encoding system] eq "identity"} {
       switch $::tcl_platform(platform) {

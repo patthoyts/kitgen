@@ -149,6 +149,7 @@ if {$encOpt} {
   lappend clifiles lib/tcl8@/encoding
 } else {
   lappend clifiles lib/tcl8@/encoding/ascii.enc \
+                   lib/tcl8@/encoding/cp1251.enc \
                    lib/tcl8@/encoding/cp1252.enc \
                    lib/tcl8@/encoding/iso8859-1.enc \
                    lib/tcl8@/encoding/iso8859-2.enc \

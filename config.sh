@@ -70,9 +70,13 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
     Linux)
       echo "LDFLAGS    = -ldl -lm"
       echo "GUI_OPTS   = -L/usr/X11R6/lib -lX11 -lXss"
+      if [ $root != "8.4" ]; then
+          echo "GUI_OPTS  += -lXft -lXext"
+      fi
       case $b64 in 1)
         echo "CFLAGS     += -m64" ;; 
       esac
+      [ -x $upx ] && echo "UPX        = $upx"
       ;;
 
     *BSD)
@@ -101,10 +105,9 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
     SunOS)
       echo "CFLAGS    += -I/usr/openwin/include"
       echo "LDFLAGS    = -ldl -lsocket -lnsl -lm"
-      if [ $root = "8.5" ]; then
-        echo "GUI_OPTS   = -L/usr/openwin/lib -L/usr/sfw/lib -lXft -lfreetype -lz -lfontconfig -lXrender -lX11 -lXext"
-      else
-        echo "GUI_OPTS   = -L/usr/openwin/lib -lX11 -lXext"
+      echo "GUI_OPTS   = -L/usr/openwin/lib -lX11 -lXext"
+      if [ $root != "8.4" ]; then
+          echo "GUI_OPTS  += -L/usr/sfw/lib -lXft -lfreetype -lz -lfontconfig -lXrender"
       fi
       case $b64 in 1)
         echo "CFLAGS += -m64" ;;

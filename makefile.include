@@ -58,7 +58,7 @@ kit-gui$(EXE): build/tcl build/tk build/tclvfs build/vqtcl build/zlib $(GUIOBJ)
 	  build/lib/libz$A build/lib/*tcl8*$A $(LDFLAGS) $(GUI_OPTS)
 
 build/files:
-	mkdir -p $@ && cd $@ && ln -s ../../../../files/* .
+	mkdir -p $@ && cd $@ && cp -p ../../../../files/* .
 
 build/tcl:
 	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \

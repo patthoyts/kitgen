@@ -15,6 +15,9 @@ Kitgen is pronounced "kit-chen".
 News
 ----
 
+  * 2008-09-05 : improvements in initialization of encodings
+  * 2008-04-11 : support for producing stardll/basekit dlls
+  * 2007-11-24 : support for building metakit based tclkits (old style)
   * 2007-05-03 : changes in cvs & build structure
   * 2007-04-04 : added kbs.tcl, the Kitgen Build System - see README.kbs
   * 2007-01-11 : fixed a vfs thread issue in boot.tcl, by Jeff Hobbs
@@ -30,7 +33,15 @@ News
   
 ----
 
-**UPDATE, MAY 2007:** _The build notes below are no longer working.  The CVS repository at equi4.com has been closed and will be replaced by an SVN mirror, hopefully by the end of May 2007.  For now, you can get copies of all the important pieces at [www.equi4.com](http://www.equi4.com/pub/tk/tars/) - the latest source for the "Vlerq" extension is in "vqtcl.tgz" and the latest kitgen source is in "kitgen.tgz". See also the new [mailing list](http://groups.google.com/group/starkit) for more details._
+**UPDATE, MAY 2007:** _The build notes below are no longer working.
+  The CVS repository at equi4.com was replaced by a Subversion
+  repository.  Snapshots of the necessary packages are available for
+  download at [www.equi4.com](http://equi4.com/pub/tk/tars) but it is
+  recommended to obtain current CVS or SVN checkouts of the packages.
+  The latest source for the "Vlerq" extension is in "vqtcl.tgz" and
+  the latest kitgen source is in "kitgen.tgz". See also the new
+  [mailing list](http://groups.google.com/group/starkit) for more
+  details._
 
 ----
 
@@ -205,8 +216,11 @@ The remaining arguments of config.sh specify one or more build options:
   * `tzdata` - include the complete set of timezone data files _(8.5 only)_
   * `univ` - build for both PowerPC and Intel _(Mac OS X only)_
   * `x86` - build for Intel _(Mac OS X only)_
+  * `mk` - build executables using Metakit instead of vlerq
   
 When not specified, the default is to build all `cli`, `dyn`, `gui` variants.
+If you ask for Metakit executables then these are in addition to the vlerq
+binaries. That is you will get both tclkit-cli and tclkitsh.
 
 
 Makefile
