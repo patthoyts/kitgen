@@ -362,4 +362,11 @@ clean: tidy
 	@if exist kit.pdb del kit.pdb
 	@if exist vc$(VCVER)0.pdb del vc$(VCVER)0.pdb
 
+distclean: clean
+	@if exist tclkit.exe del tclkit.exe
+	@if exist tclkitsh.exe del tclkitsh.exe
+	@if exist tclkit-cli.exe del tclkit-cli.exe
+	@if exist tclkit-gui.exe del tclkit-gui.exe
+	@if exist tclkit-dyn.exe del tclkit-dyn.exe
+
 #EOF
