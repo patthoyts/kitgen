@@ -9,6 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 2000-2006 Jean-Claude Wippler <jcw@equi4.com>
  * Copyright (c) 2003-2006 ActiveState Software Inc.
+ * Copyright (c) 2007-2008 Pat Thoyts <patthoyts@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -48,8 +49,10 @@ Tcl_AppInitProc	Thread_Init;
 Tcl_AppInitProc	Itcl_Init;
 #endif
 #ifdef _WIN32
-Tcl_AppInitProc	Dde_Init, Registry_Init;
+Tcl_AppInitProc	Dde_Init, Dde_SafeInit, Registry_Init;
 #endif
+
+static Tcl_AppInitProc	TclKitPath_Init;
 
 /* insert custom prototypes here */
 
@@ -74,14 +77,13 @@ static void TclKit_InitStdChannels(void);
 static char appInitCmd[] = 
 "proc tclKitInit {} {\n"
     "rename tclKitInit {}\n"
+    "load {} tclkitpath\n"
+    /*"puts \"appInit: [encoding system] $::tcl::kitpath\"\n"*/
     "catch {load {} zlib}\n"
-    "if {![info exists ::tcl::basekit]} {\n"
-        "namespace eval ::tcl { variable basekit [info nameofexecutable] }\n"
-    "}\n"
 #ifdef KIT_LITE
     "load {} vlerq\n"
     "namespace eval ::vlerq {}\n"
-    "if {[catch { vlerq open $::tcl::basekit } ::vlerq::starkit_root]} {\n"
+    "if {[catch { vlerq open $::tcl::kitpath } ::vlerq::starkit_root]} {\n"
       "set n -1\n"
     "} else {\n"
       "set files [vlerq get $::vlerq::starkit_root 0 dirs 0 files]\n"
@@ -91,7 +93,7 @@ static char appInitCmd[] =
         "array set a [vlerq get $files $n]\n"
 #else
     "load {} Mk4tcl\n"
-    "mk::file open exe $::tcl::basekit -readonly\n"
+    "mk::file open exe $::tcl::kitpath -readonly\n"
     "set n [mk::select exe.dirs!0.files name boot.tcl]\n"
     "if {[llength $n] == 1} {\n"
         "array set a [mk::get exe.dirs!0.files!$n]\n"
@@ -106,7 +108,7 @@ static char appInitCmd[] =
         "uplevel #0 { source [lindex $::argv 1] }\n"
         "exit\n"
     "} else {\n"
-        "error \"\n  $::tcl::basekit has no VFS data to start up\"\n"
+        "error \"\n  $::tcl::kitpath has no VFS data to start up\"\n"
     "}\n"
 "}\n"
 "tclKitInit"
@@ -117,7 +119,8 @@ static char preInitCmd[] =
     "rename tclKitPreInit {}\n"
     /* In 8.5 we need to set these paths for child interps */
     "global tcl_library tcl_libPath tcl_version\n"
-    "set noe [info nameofexecutable]\n"
+    "load {} tclkitpath\n"
+    "set noe $::tcl::kitpath\n"
     "set tcl_library [file join $noe lib tcl$tcl_version]\n"
     "set tcl_libPath [list $tcl_library [file join $noe lib]]\n"
     "set tcl_pkgPath [list $tcl_library [file join $noe lib]]\n"
@@ -126,12 +129,12 @@ static char preInitCmd[] =
 ;
 
 static const char initScript[] =
-"if {[file isfile [file join $::tcl::basekit main.tcl]]} {\n"
+"if {[file isfile [file join $::tcl::kitpath main.tcl]]} {\n"
     "if {[info commands console] != {}} { console hide }\n"
     "set tcl_interactive 0\n"
     "incr argc\n"
     "set argv [linsert $argv 0 $argv0]\n"
-    "set argv0 [file join $::tcl::basekit main.tcl]\n"
+    "set argv0 [file join $::tcl::kitpath main.tcl]\n"
 "} else continue\n"
 ;
 
@@ -163,14 +166,19 @@ TclKit_AppInit(Tcl_Interp *interp)
 #if 10 * TCL_MAJOR_VERSION + TCL_MINOR_VERSION < 85
     Tcl_StaticPackage(0, "pwb", Pwb_Init, NULL);
 #endif
+    Tcl_StaticPackage(0, "tclkitpath", TclKitPath_Init, NULL);
     Tcl_StaticPackage(0, "rechan", Rechan_Init, NULL);
     Tcl_StaticPackage(0, "vfs", Vfs_Init, NULL);
     Tcl_StaticPackage(0, "zlib", Zlib_Init, NULL);
 #ifdef TCL_THREADS
-    Tcl_StaticPackage(0, "Thread", Thread_Init, NULL);
+    Tcl_StaticPackage(0, "Thread", Thread_Init, Thread_SafeInit);
 #endif
 #ifdef _WIN32
+#if 10 * TCL_MAJOR_VERSION + TCL_MINOR_VERSION > 84
+    Tcl_StaticPackage(0, "dde", Dde_Init, Dde_SafeInit);
+#else
     Tcl_StaticPackage(0, "dde", Dde_Init, NULL);
+#endif
     Tcl_StaticPackage(0, "registry", Registry_Init, NULL);
 #endif
 #ifdef KIT_INCLUDES_TK
@@ -186,47 +194,6 @@ TclKit_AppInit(Tcl_Interp *interp)
     Tcl_SetVar(interp, "tcl_rcFileName", "~/.tclkitrc", TCL_GLOBAL_ONLY);
 #endif
 
-    if (tclKitPath != NULL) {
-      	/*
-      	 * If we have a tclKitPath set, then set that to ::tcl::basekit.
-      	 * This will be used instead of 'info nameofexecutable' for
-      	 * determining the location of the base kit.  This is necessary
-      	 * for DLL-based starkits.
-      	 *
-      	 * This code equates to:
-      	 *   namespace eval ::tcl [list variable basekit $tclKitPath]
-      	 * Could consider using Tcl_LinkVar instead.
-      	 */
-      	Tcl_Obj *objPtr;
-      	Tcl_Obj *evobjPtr;
-
-      	evobjPtr = Tcl_NewObj();
-      	Tcl_ListObjAppendElement(interp, evobjPtr,
-      		Tcl_NewStringObj("variable", -1));
-      	Tcl_ListObjAppendElement(interp, evobjPtr,
-      		Tcl_NewStringObj("basekit", -1));
-      	Tcl_ListObjAppendElement(interp, evobjPtr,
-      		Tcl_NewStringObj(tclKitPath, -1));
-      	Tcl_IncrRefCount(evobjPtr);
-
-      	objPtr = Tcl_NewObj();
-      	Tcl_ListObjAppendElement(interp, objPtr,
-      		Tcl_NewStringObj("namespace", -1));
-      	Tcl_ListObjAppendElement(interp, objPtr,
-      		Tcl_NewStringObj("eval", -1));
-      	Tcl_ListObjAppendElement(interp, objPtr,
-      		Tcl_NewStringObj("::tcl", -1));
-      	Tcl_ListObjAppendElement(interp, objPtr, evobjPtr);
-      	Tcl_IncrRefCount(objPtr);
-      	if (Tcl_EvalObjEx(interp, objPtr, TCL_GLOBAL_ONLY) != TCL_OK) {
-      	    Tcl_DecrRefCount(objPtr);
-      	    Tcl_DecrRefCount(evobjPtr);
-      	    goto error;
-      	}
-      	Tcl_DecrRefCount(objPtr);
-      	Tcl_DecrRefCount(evobjPtr);
-    }
-
 #if 10 * TCL_MAJOR_VERSION + TCL_MINOR_VERSION > 84
     {
 	Tcl_DString encodingName;
@@ -240,16 +207,10 @@ TclKit_AppInit(Tcl_Interp *interp)
     }
 #endif
 
-#ifdef KIT_DLL
     TclSetPreInitScript(preInitCmd);
     if ((Tcl_EvalEx(interp, appInitCmd, -1, TCL_EVAL_GLOBAL) == TCL_ERROR)
            || (Tcl_Init(interp) == TCL_ERROR))
         goto error;
-#else /* not a dll */
-    TclSetPreInitScript(appInitCmd);
-    if (Tcl_Init(interp) == TCL_ERROR)
-        goto error;
-#endif
 
 #if defined(KIT_INCLUDES_TK) && defined(_WIN32)
     if (Tk_Init(interp) == TCL_ERROR)
@@ -259,11 +220,12 @@ TclKit_AppInit(Tcl_Interp *interp)
 #endif
 
     /* messy because TclSetStartupScriptPath is called slightly too late */
-    if (Tcl_Eval(interp, initScript) == TCL_OK) {
+    if (Tcl_EvalEx(interp, initScript, -1, TCL_EVAL_GLOBAL) == TCL_OK) {
         Tcl_Obj* path = TclGetStartupScriptPath();
       	TclSetStartupScriptPath(Tcl_GetObjResult(interp));
-      	if (path == NULL)
-        	  Tcl_Eval(interp, "incr argc -1; set argv [lrange $argv 1 end]");
+      	if (path == NULL) {
+	    Tcl_Eval(interp, "incr argc -1; set argv [lrange $argv 1 end]");
+	}
     }
 
     Tcl_SetVar(interp, "errorInfo", "", TCL_GLOBAL_ONLY);
@@ -286,17 +248,20 @@ __declspec(dllexport) char *
 #else
 extern char *
 #endif
-TclKit_SetKitPath(CONST char *kitPath)
+TclKit_SetKitPath(const char *kitPath)
 {
     /*
      * Allow someone to define an alternate path to the base kit
      * than 'info nameofexecutable'.
+     * NOTE: this must be provided as a utf-8 encoded string or it may
+     *       fail when the path includes non-ascii characters.
      */
     if (kitPath) {
       	int len = (int)strlen(kitPath);
       	if (tclKitPath) {
       	    ckfree(tclKitPath);
       	}
+
       	tclKitPath = (char *) ckalloc(len + 1);
       	memcpy(tclKitPath, kitPath, len);
       	tclKitPath[len] = '\0';
@@ -338,4 +303,52 @@ TclKit_InitStdChannels(void)
       	}
       	Tcl_SetStdChannel(chan, TCL_STDERR);
     }
+}
+
+/*
+ * Accessor to true pathname of the tclkit, to work as a starpack or stardll.
+ */
+static int
+TclKitPathObjCmd(ClientData dummy, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+    /*
+     * If we have a tclKitPath set, then set that to ::tcl::kitpath.
+     * This will be used instead of 'info nameofexecutable' for
+     * determining the location of the base kit.  This is necessary
+     * for DLL-based starkits.
+     */
+    char* str;
+    if (objc == 2) {
+	/*
+	 * XXX: Should we allow people to set this?
+	 */
+	TclKit_SetKitPath(Tcl_GetString(objv[1]));
+    } else if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?path?");
+    }
+    str = tclKitPath ? tclKitPath : Tcl_GetNameOfExecutable();
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(str, -1));
+    return TCL_OK;
+}
+
+/*
+ * Public entry point for ::tcl::kitpath.
+ * Creates both link variable name and Tcl command ::tcl::kitpath.
+ */
+static int
+TclKitPath_Init(Tcl_Interp *interp)
+{
+    Tcl_CreateObjCommand(interp, "::tcl::kitpath", TclKitPathObjCmd, 0, 0);
+    if (Tcl_LinkVar(interp, "::tcl::kitpath", (char *) &tclKitPath,
+		TCL_LINK_STRING | TCL_LINK_READ_ONLY) != TCL_OK) {
+	Tcl_ResetResult(interp);
+    }
+    if (tclKitPath == NULL) {
+	/*
+	 * XXX: We may want to avoid doing this to allow tcl::kitpath calls
+	 * XXX: to obtain changes in nameofexe, if they occur.
+	 */
+	TclKit_SetKitPath(Tcl_GetNameOfExecutable());
+    }
+    return Tcl_PkgProvide(interp, "tclkitpath", "1.0");
 }

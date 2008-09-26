@@ -148,25 +148,28 @@ set guifiles {
 if {$encOpt} {
   lappend clifiles lib/tcl8@/encoding
 } else {
-  lappend clifiles lib/tcl8@/encoding/ascii.enc \
-                   lib/tcl8@/encoding/cp1251.enc \
-                   lib/tcl8@/encoding/cp1252.enc \
-                   lib/tcl8@/encoding/iso8859-1.enc \
-                   lib/tcl8@/encoding/iso8859-2.enc \
-                   lib/tcl8@/encoding/iso8859-3.enc \
-                   lib/tcl8@/encoding/iso8859-4.enc \
-                   lib/tcl8@/encoding/iso8859-5.enc \
-                   lib/tcl8@/encoding/iso8859-6.enc \
-                   lib/tcl8@/encoding/iso8859-7.enc \
-                   lib/tcl8@/encoding/iso8859-8.enc \
-                   lib/tcl8@/encoding/iso8859-9.enc \
-                   lib/tcl8@/encoding/iso8859-10.enc \
-                   lib/tcl8@/encoding/iso8859-13.enc \
-                   lib/tcl8@/encoding/iso8859-14.enc \
-                   lib/tcl8@/encoding/iso8859-15.enc \
-                   lib/tcl8@/encoding/iso8859-16.enc \
-                   lib/tcl8@/encoding/koi8-r.enc \
-                   lib/tcl8@/encoding/macRoman.enc
+    # Minimal set
+    #foreach e {ascii cp1251 cp1252 iso8859-1 iso8859-2 iso8859-3
+    #    iso8859-4 iso8859-5 iso8859-6 iso8859-7 iso8859-8 iso8859-9
+    #    iso8859-10 iso8859-13 iso8859-14 iso8859-15 iso8859-16
+    #    koi8-r macRoman} {
+    #    lappend clifiles lib/tcl8@/encoding/$e.enc
+    #}
+
+    # ActiveTcl basekit encodings: this just avoids the largest files:
+    #  big5 cp932 cp936 cp949 cp950 euc-cn euc-jp euc-kr gn12345 gb2312
+    #  gb2312-raw jis0208 jis0212 ksc601 shiftjis
+    foreach e {ascii cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257
+        cp1258 cp437 cp737 cp775 cp850 cp852 cp855 cp857 cp860 cp861 cp862
+        cp863 cp864 cp865 cp866 cp869 cp874 dingbats ebcdic gb1988
+        iso2022 iso2022-jp iso2022-kr iso8859-1 iso8859-10 iso8859-13
+        iso8859-14 iso8859-15 iso8859-16 iso8859-2 iso8859-3 iso8859-4
+        iso8859-5 iso8859-6 iso8859-7 iso8859-8 iso8859-9 jis0201 koi8-r
+        koi8-u macCentEuro macCroatian macCyrillic macDingbats macGreek
+        macIceland macRoman macRomania macThai macTurkish macUkraine
+        symbol tis-620} {
+        lappend clifiles lib/tcl8@/encoding/$e.enc
+    }
 }
 
 if {$threadOpt} {
