@@ -93,13 +93,19 @@ set clifiles {
   lib/tcl8@/tclIndex
   lib/tcl8@/word.tcl
   lib/vfs1@/mk4vfs.tcl
-  lib/vfs1@/mk4vfscompat.tcl
   lib/vfs1@/pkgIndex.tcl
   lib/vfs1@/starkit.tcl
   lib/vfs1@/vfslib.tcl
   lib/vfs1@/vfsUtils.tcl
+  lib/vfs1@/tarvfs.tcl
   lib/vfs1@/zipvfs.tcl
-  lib/vfs1@/zipvfscompat.tcl
+}
+
+if {[package vcompare [package provide vfs] 1.4] < 0} {
+    # vfs 1.3 needed these two
+    lappend clifiles \
+        lib/vfs1@/mk4vfscompat.tcl \
+        lib/vfs1@/zipvfscompat.tcl
 }
 
 if {$lite} {
@@ -131,7 +137,6 @@ set guifiles {
   lib/tk8@/optMenu.tcl
   lib/tk8@/palette.tcl
   lib/tk8@/panedwindow.tcl
-  lib/tk8@/prolog.ps
   lib/tk8@/safetk.tcl
   lib/tk8@/scale.tcl
   lib/tk8@/scrlbar.tcl
@@ -143,6 +148,13 @@ set guifiles {
   lib/tk8@/tkfbox.tcl
   lib/tk8@/unsupported.tcl
   lib/tk8@/xmfbox.tcl
+}
+# handle files no longer present
+foreach f { lib/tk8@/prolog.ps } {
+    set fx [string map $versmap $f]
+    if {[file exists build/files/$fx]} {
+        lappend guifiles $f
+    }
 }
 
 if {$encOpt} {
