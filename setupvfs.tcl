@@ -152,7 +152,7 @@ set guifiles {
 # handle files no longer present
 foreach f { lib/tk8@/prolog.ps } {
     set fx [string map $versmap $f]
-    if {[file exists build/files/$fx]} {
+    if {[file exists build/$fx]} {
         lappend guifiles $f
     }
 }
