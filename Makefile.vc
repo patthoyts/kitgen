@@ -63,7 +63,7 @@ CFLAGS  = -W3 -D_WINDOWS -DWIN32 -DSTATIC_BUILD
 BUILD   = $(MAKEDIR)\build
 
 !if $V == 84
-PARTS   = vqtcl zlib vfs
+PARTS   = vqtcl vfs
 OPTS    = static,msvcrt
 X       = sx
 !ifndef KITOPTS
@@ -72,13 +72,18 @@ KITOPTS =
 LIBS    = user32.lib gdi32.lib comdlg32.lib comctl32.lib \
 	  shell32.lib imm32.lib advapi32.lib
 !else
-PARTS   = vqtcl zlib vfs threaddyn
+PARTS   = vqtcl vfs threaddyn
 OPTS    = static,msvcrt,threads
 X       = tsx
 !ifndef KITOPTS
 KITOPTS = -t
 !endif
 LIBS    = user32.lib gdi32.lib ws2_32.lib
+!endif
+
+!if $V < 86
+PARTS = $(PARTS) zlib
+LIBS  = $(BUILD)\lib\zlib.lib $(LIBS) 
 !endif
 
 !if $(SYMBOLS)
@@ -142,10 +147,17 @@ LIBS    = $(LIBS) bufferoverflowU.lib
 #-------------------------------------------------------------------------
 
 CLIOBJS = $(BUILD)\pwb.obj $(BUILD)\rechan.obj \
-	 $(BUILD)\zlib.obj $(BUILD)\tclAppInit.obj $(BUILD)\tclkitsh.res
+	 $(BUILD)\tclAppInit.obj $(BUILD)\tclkitsh.res
 
 GUIOBJS = $(BUILD)\pwb.obj $(BUILD)\rechan.obj \
-	 $(BUILD)\zlib.obj $(BUILD)\winMain.obj $(BUILD)\tclkit.res
+	  $(BUILD)\winMain.obj $(BUILD)\tclkit.res
+
+!if $V < 86
+CLIOBJS = $(CLIOBJS) $(BUILD)\zlib.obj
+GUIOBJS = $(GUIOBJS) $(BUILD)\zlib.obj
+!endif
+
+#-------------------------------------------------------------------------
 
 #all: lite heavy
 lite: tclkit-cli tclkit-gui
@@ -159,6 +171,15 @@ tclkit-cli.exe: kit-cli.exe tidy
 	@$(COPY) kit-cli.exe $@
 	-@$(UPXCOMP)
 	kit-cli.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ cli
+	$@ <<
+puts "version : Tcl [info patchlevel] $$tcl_platform(osVersion) $$tcl_platform(machine)"
+foreach pkg {starkit rechan registry dde} {package require $$pkg}
+interp create slave
+slave eval {
+  foreach pkg {starkit rechan registry dde} {package require $$pkg}
+}
+<<
+
 
 tclkit-gui.exe: kit-gui.exe tidy
 	@$(COPY) kit-gui.exe $@
@@ -169,9 +190,9 @@ kit-cli.exe: setup tcl $(PARTS) files $(CLIOBJS)
 	@$(CC) $(CFLAGS) -I$(BUILD)/include -DKIT_LITE -DSTATIC_BUILD \
 	  -c ../../kitInit.c -Fo$(BUILD)/kitInit.obj
 	@$(LINK) $(LDFLAGS) -subsystem:console -out:$@ $(CLIOBJS) \
-	  $(BUILD)\kitInit.obj $(BUILD)\vfs.obj \
+	  $(BUILD)\kitInit.obj \
+	  $(BUILD)\lib\vfs1.4\vfs1*.lib \
 	  $(BUILD)\lib\vqtcl4.1\vqtcl4*.lib \
-	  $(BUILD)\lib\zlib.lib \
 	  $(BUILD)\lib\tcl$V*.lib \
 	  $(BUILD)\lib\tcldde1*.lib \
 	  $(BUILD)\lib\tclreg1*.lib $(LIBS)
@@ -181,9 +202,9 @@ kit-gui.exe: setup tcl tk $(PARTS) files $(GUIOBJS)
 	@$(CC) $(CFLAGS) -I$(BUILD)/include -DKIT_LITE -DKIT_INCLUDES_TK \
 	  -c ../../kitInit.c -Fo$(BUILD)/kitInit.obj
 	@$(LINK) $(LDFLAGS) -subsystem:windows -out:$@ $(GUIOBJS) \
-	  $(BUILD)\kitInit.obj $(BUILD)\vfs.obj \
+	  $(BUILD)\kitInit.obj \
+	  $(BUILD)\lib\vfs1.4\vfs1*.lib \
 	  $(BUILD)\lib\vqtcl4.1\vqtcl4*.lib \
-	  $(BUILD)\lib\zlib.lib \
 	  $(BUILD)\lib\tcl$V*.lib \
 	  $(BUILD)\lib\tk$V*.lib \
 	  $(BUILD)\lib\tcldde1*.lib \
@@ -196,6 +217,14 @@ tclkitsh.exe: kitsh.exe tidy
 	@$(COPY) kitsh.exe $@
 	-@$(UPXCOMP)
 	kitsh.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ cli
+	$@ <<
+puts "version : Tcl [info patchlevel] $$tcl_platform(osVersion) $$tcl_platform(machine)"
+foreach pkg {starkit rechan registry dde} {package require $$pkg}
+interp create slave
+slave eval {
+  foreach pkg {starkit rechan registry dde} {package require $$pkg}
+}
+<<
 
 tclkit.exe: kitsh.exe kit.exe tidy
 	@$(COPY) kit.exe $@
@@ -203,29 +232,29 @@ tclkit.exe: kitsh.exe kit.exe tidy
 	kitsh.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ gui
 
 kitsh.exe: setup tcl mk itcl $(PARTS:vqtcl=) files $(CLIOBJS)
-	$(CC) $(CFLAGS) -I$(BUILD)/include -DSTATIC_BUILD \
+	@$(CC) $(CFLAGS) -I$(BUILD)/include -DSTATIC_BUILD \
 	  -DKIT_INCLUDES_ITCL -c ../../kitInit.c -Fo$(BUILD)/kitInit.obj
 	$(LINK) $(LDFLAGS) -subsystem:console -out:$@ $(CLIOBJS) \
-	  $(BUILD)\kitInit.obj $(BUILD)\vfs.obj \
+	  $(BUILD)\kitInit.obj \
 	  $(BUILD)\mk4tcl.obj $(BUILD)\mk4too.obj \
+	  $(BUILD)\lib\vfs1.4\vfs1*.lib \
 	  $(BUILD)\lib\mk4vc*.lib \
 	  $(BUILD)\lib\itcl3.4\itcl3*.lib \
-	  $(BUILD)\lib\zlib.lib \
 	  $(BUILD)\lib\tcl$V*.lib \
 	  $(BUILD)\lib\tcldde1*.lib \
 	  $(BUILD)\lib\tclreg1*.lib $(LIBS)
 	$(_VC_MANIFEST_EMBED_EXE)
 
 kit.exe: setup tcl tk mk itcl $(PARTS:vqtcl=) files $(GUIOBJS)
-	$(CC) $(CFLAGS) -I$(BUILD)/include -DSTATIC_BUILD \
+	@$(CC) $(CFLAGS) -I$(BUILD)/include -DSTATIC_BUILD \
 	  -DKIT_INCLUDES_ITCL -DKIT_INCLUDES_TK \
 	  -c ../../kitInit.c -Fo$(BUILD)/kitInit.obj
-	$(LINK) $(LDFLAGS) -subsystem:windows -out:$@ $(GUIOBJS) \
-	  $(BUILD)\kitInit.obj $(BUILD)\vfs.obj \
+	@$(LINK) $(LDFLAGS) -subsystem:windows -out:$@ $(GUIOBJS) \
+	  $(BUILD)\kitInit.obj \
 	  $(BUILD)\mk4tcl.obj $(BUILD)\mk4too.obj \
+	  $(BUILD)\lib\vfs1.4\vfs1*.lib \
 	  $(BUILD)\lib\mk4vc*.lib \
 	  $(BUILD)\lib\itcl3.4\itcl3*.lib \
-	  $(BUILD)\lib\zlib.lib \
 	  $(BUILD)\lib\tcl$V*.lib \
 	  $(BUILD)\lib\tk$V*.lib \
 	  $(BUILD)\lib\tcldde1*.lib \
@@ -267,12 +296,18 @@ $(BUILD)\lib\thread\thread26$(X:t=).lib:
 	  INSTALLDIR=$(BUILD) OPTS=$(OPTS) TMP_DIR=$(BUILD)\thread \
 	  OUT_DIR=$(BUILD)\thread all install
 
-vfs: $(BUILD)\vfs.obj
+vfs: $(BUILD)\lib\vfs1.4\vfs14$(X:t=).lib
 $(BUILD)\vfs.obj:
 	$(CC) $(CFLAGS) -DSTATIC_BUILD -I..\tcl\generic -I..\tcl\win \
 	  -I..\..\8.x\tclvfs\generic -c ..\..\8.x\tclvfs\generic\vfs.c \
 	  -Fo$(BUILD)\vfs.obj
-	$(CPY) ..\..\8.x\tclvfs\library $(BUILD)\lib\vfs1.3^\
+	$(CPY) ..\..\8.x\tclvfs\library $(BUILD)\lib\vfs1.4^\
+
+$(BUILD)\lib\vfs1.4\vfs14$(X:t=).lib:
+	pushd ..\..\8.x\tclvfs\win & $(MAKE) -f Makefile.vc \
+	  INSTALLDIR=$(BUILD) TCLDIR=$(BUILD)\..\..\tcl \
+	  OPTS=$(OPTS) TMP_DIR=$(BUILD)\vfs \
+	  OUT_DIR=$(BUILD)\vfs all install-binaries install-libraries
 
 zlib: $(BUILD)\lib\zlib.lib
 $(BUILD)\lib\zlib.lib:

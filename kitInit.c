@@ -23,6 +23,15 @@
 #include <tcl.h>
 #endif
 
+/* define this to use the zlib package */
+#ifndef KIT_INCLUDES_ZLIB
+#if 10 * TCL_MAJOR_VERSION + TCL_MINOR_VERSION < 86
+#define KIT_INCLUDES_ZLIB 1
+#else
+#define KIT_INCLUDES_ZLIB 0
+#endif
+#endif
+
 #include <string.h>
 
 #ifdef _WIN32
@@ -32,11 +41,15 @@
 #endif
 
 /* defined in tclInt.h */
+#if 10 * TCL_MAJOR_VERSION + TCL_MINOR_VERSION < 86
 extern Tcl_Obj* TclGetStartupScriptPath();
 extern void TclSetStartupScriptPath(Tcl_Obj*);
+#define Tcl_GetStartupScript(encPtr) TclGetStartupScriptPath()
+#define Tcl_SetStartupScript(path,enc) TclSetStartupScriptPath(path)
+#endif
 extern char* TclSetPreInitScript (char*);
 
-Tcl_AppInitProc	Pwb_Init, Rechan_Init, Vfs_Init, Zlib_Init;
+Tcl_AppInitProc	Pwb_Init, Rechan_Init, Vfs_Init;
 #ifdef KIT_LITE
 Tcl_AppInitProc	Vlerq_Init, Vlerq_SafeInit;
 #else
@@ -44,6 +57,9 @@ Tcl_AppInitProc	Mk4tcl_Init;
 #endif
 #ifdef TCL_THREADS
 Tcl_AppInitProc	Thread_Init;
+#endif
+#if KIT_INCLUDES_ZLIB
+Tcl_AppInitProc	Zlib_Init;
 #endif
 #ifdef KIT_INCLUDES_ITCL
 Tcl_AppInitProc	Itcl_Init;
@@ -79,7 +95,9 @@ static char appInitCmd[] =
     "rename tclKitInit {}\n"
     "load {} tclkitpath\n"
     /*"puts \"appInit: [encoding system] $::tcl::kitpath\"\n"*/
+#if KIT_INCLUDES_ZLIB
     "catch {load {} zlib}\n"
+#endif
 #ifdef KIT_LITE
     "load {} vlerq\n"
     "namespace eval ::vlerq {}\n"
@@ -169,7 +187,9 @@ TclKit_AppInit(Tcl_Interp *interp)
     Tcl_StaticPackage(0, "tclkitpath", TclKitPath_Init, NULL);
     Tcl_StaticPackage(0, "rechan", Rechan_Init, NULL);
     Tcl_StaticPackage(0, "vfs", Vfs_Init, NULL);
+#if KIT_INCLUDES_ZLIB
     Tcl_StaticPackage(0, "zlib", Zlib_Init, NULL);
+#endif
 #ifdef TCL_THREADS
     Tcl_StaticPackage(0, "Thread", Thread_Init, Thread_SafeInit);
 #endif
@@ -221,8 +241,9 @@ TclKit_AppInit(Tcl_Interp *interp)
 
     /* messy because TclSetStartupScriptPath is called slightly too late */
     if (Tcl_EvalEx(interp, initScript, -1, TCL_EVAL_GLOBAL) == TCL_OK) {
-        Tcl_Obj* path = TclGetStartupScriptPath();
-      	TclSetStartupScriptPath(Tcl_GetObjResult(interp));
+	const char *encoding = NULL;
+        Tcl_Obj* path = Tcl_GetStartupScript(&encoding);
+      	Tcl_SetStartupScript(Tcl_GetObjResult(interp), encoding);
       	if (path == NULL) {
 	    Tcl_Eval(interp, "incr argc -1; set argv [lrange $argv 1 end]");
 	}

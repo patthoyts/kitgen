@@ -327,7 +327,8 @@ switch [info sharedlibext] {
 
 # Create package index files for the static extensions.
 # verq registry dde and vfs are handled above or using files/*
-set exts {zlib rechan}
+set exts {rechan}
+if {![package vsatisfies [package provide Tcl] 8.6]} { lappend exts zlib }
 if {[package vcompare [package provide Tcl] 8.4] == 0} { lappend exts pwb }
 foreach ext $exts {
     staticpkg $ext
