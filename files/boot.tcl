@@ -38,7 +38,10 @@ proc tclInit {} {
             }
 
             # use on-the-fly decompression, if mk4vfs understands that
-            set mk4vfs::zstreamed 1
+            # Note: 8.6 core zlib does not support this for mk4vfs
+            if {![package vsatisfies [package require Tcl] 8.6]} {
+                set mk4vfs::zstreamed 1
+            }
         } else {
             set driver mkcl
 

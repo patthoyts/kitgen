@@ -149,8 +149,8 @@ set guifiles {
   lib/tk8@/unsupported.tcl
   lib/tk8@/xmfbox.tcl
 }
-# handle files no longer present
-foreach f { lib/tk8@/prolog.ps } {
+# handle new or deleted files
+foreach f { lib/tk8@/prolog.ps lib/tk8@/icons.tcl } {
     set fx [string map $versmap $f]
     if {[file exists build/$fx]} {
         lappend guifiles $f
@@ -220,6 +220,9 @@ proc locatefile {f} {
     if {$::debugOpt} {
       puts "  $n  ==>  \$vfs/$f"
     }
+  } elseif {[string match "lib/vfs*/pkgIndex.tcl" $f]} {
+      set n [mk_tclvfs_index build/$f]
+      if {$::debugOpt} {puts "  $n ==> \$vfs/$f" }
   } else {
     set n build/files/$f
     if {[file exists $n]} {
@@ -231,6 +234,26 @@ proc locatefile {f} {
     }
   }
   return $n
+}
+
+# We use a modified tclvfs pkgIndex with a reduced set of vfs' and force
+# the use of vfslib.tcl for utility functions.
+proc mk_tclvfs_index {src} {
+  global versmap
+  set fin [open $src r]
+  set fout [open ${src}.tclkit w]
+  puts $fout [string map $versmap \
+    "package ifneeded vfs [package provide vfs] \[list load {} vfs\]"]
+  while {[gets $fin line] != -1} {
+    foreach pkg {starkit vfslib vfs::mk4 vfs::zip vfs::tar mk4vfs} {
+      if {[string match "package ifneeded $pkg *" $line]} {
+        puts $fout $line
+      }
+    }
+  }
+  close $fin
+  close $fout
+  return ${src}.tclkit
 }
 
 # copy file to m2m-mounted vfs
@@ -268,6 +291,8 @@ proc vfscopy {argv} {
   }
 }
 
+# Create a pkgIndex file for a statick package 'pkg'. If the version
+# is not provided then it is detected when creating the vfs.
 proc staticpkg {pkg {ver {}} {init {}}} {
     global vfs
     if {$ver eq {}} {
@@ -326,14 +351,14 @@ switch [info sharedlibext] {
 }
 
 # Create package index files for the static extensions.
-# verq registry dde and vfs are handled above or using files/*
+# vlerq registry dde and vfs are handled above or using files/*
 set exts {rechan}
 if {![package vsatisfies [package provide Tcl] 8.6]} { lappend exts zlib }
 if {[package vcompare [package provide Tcl] 8.4] == 0} { lappend exts pwb }
 foreach ext $exts {
     staticpkg $ext
 }
-
+if {!$lite} { staticpkg Mk4tcl }
 if {[lsearch [info loaded] {{} Itcl}] != -1} {
     catch {load {} Itcl}
     lappend versmap itcl3@ itcl[package provide Itcl]

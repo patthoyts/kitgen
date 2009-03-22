@@ -153,6 +153,7 @@ GUIOBJS = $(BUILD)\pwb.obj $(BUILD)\rechan.obj \
 	  $(BUILD)\winMain.obj $(BUILD)\tclkit.res
 
 !if $V < 86
+CFLAGS=$(CFLAGS) -DKIT_INCLUDES_ZLIB=1
 CLIOBJS = $(CLIOBJS) $(BUILD)\zlib.obj
 GUIOBJS = $(GUIOBJS) $(BUILD)\zlib.obj
 !endif
@@ -173,11 +174,13 @@ tclkit-cli.exe: kit-cli.exe tidy
 	kit-cli.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ cli
 	$@ <<
 puts "version : Tcl [info patchlevel] $$tcl_platform(osVersion) $$tcl_platform(machine)"
-foreach pkg {starkit rechan registry dde} {package require $$pkg}
+set ext {starkit rechan registry dde}
+foreach lib [info loaded] {if {[lindex $$lib 1] eq "zlib"} {lappend ext zlib}}
+foreach pkg $$ext {package require $$pkg}
+set f [open [info nameofexecutable]/boot.tcl r]
+list [seek $$f 0 end] [tell $$f] [close $$f]
 interp create slave
-slave eval {
-  foreach pkg {starkit rechan registry dde} {package require $$pkg}
-}
+slave eval [list foreach pkg $$ext {package require $$pkg}]
 <<
 
 
@@ -219,11 +222,13 @@ tclkitsh.exe: kitsh.exe tidy
 	kitsh.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ cli
 	$@ <<
 puts "version : Tcl [info patchlevel] $$tcl_platform(osVersion) $$tcl_platform(machine)"
-foreach pkg {starkit rechan registry dde} {package require $$pkg}
+set ext {starkit rechan registry dde Mk4tcl Itcl}
+foreach lib [info loaded] {if {[lindex $$lib 1] eq "zlib"} {lappend ext zlib}}
+foreach pkg $$ext {package require $$pkg}
+set f [open [info nameofexecutable]/boot.tcl r]
+list [seek $$f 0 end] [tell $$f] [close $$f]
 interp create slave
-slave eval {
-  foreach pkg {starkit rechan registry dde} {package require $$pkg}
-}
+slave eval [list foreach pkg $$ext {package require $$pkg}]
 <<
 
 tclkit.exe: kitsh.exe kit.exe tidy
