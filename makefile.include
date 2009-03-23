@@ -108,10 +108,10 @@ cleanext:
 	rm -rf build/lib/vfs* build/lib/thread* build/lib/vqtcl*
 
 clean:
-	rm -rf build kit-cli$(EXE) kit-gui$(EXE) kit-dyn$(EXE)
+	rm -rf build kit-cli$(EXE) kit-gui$(EXE) kit-dyn$(EXE) kitsh$(EXE) kit$(EXE)
 
 distclean: clean
-	rm -f tclkit-cli$(EXE) tclkit-dyn$(EXE) tclkit-gui$(EXE)
+	rm -f tclkit-cli$(EXE) tclkit-dyn$(EXE) tclkit-gui$(EXE) tclkitsh$(EXE) tclkit$(EXE)
 
 .PHONY: all base clean distclean threaded tidy
 

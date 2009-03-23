@@ -1,6 +1,30 @@
-TAR_URL	= http://www.equi4.com/pub/tk/tars
+TCL_URL	= http://prdownloads.sourceforge.net/tcl/
+TK_URL	= http://prdownloads.sourceforge.net/tcl/
+
+TCL_CVS   =":pserver:anonymous@tcl.cvs.sourceforge.net/cvsroot/tcl"
+TK_CVS    =":pserver:anonymous@tktoolkit.cvs.sourceforge.net/cvsroot/tktoolkit"
+VFS_CVS   =":pserver:anonymous@tclvfs.cvs.sourceforge.net/cvsroot/tclvfs"
+ZLIB_CVS  =":pserver:anonymous@tkimg.cvs.sourceforge.net/cvsroot/tkimg"
+ITCL_CVS  =":pserver:anonymous@incrtcl.cvs.sourceforge.net/cvsroot/incrtcl"
+VQTCL_SVN ="http://tclkit.googlecode.com/svn/trunk/vqtcl"
+MK_SVN    ="svn://svn.equi4.com/metakit/trunk"
 
 unspecified-target:
+
+checkout:
+	mkdir 8.x && cd 8.x && \
+	  cvs -qz6 -d$(VFS_CVS) co -d vfs tclvfs && \
+	  cvs -qz6 -d$(ZLIB_CVS) co -d zlib tkimg/libz && \
+	  cvs -qz6 -d$(TCL_CVS) co thread && \
+	  cvs -qz6 -d$(ITCL_CVS) co -d itcl incrTcl/itcl && \
+	  svn checkout $(VQTCL_SVN) vqtcl && \
+	  svn checkout $(MK_SVN) mk
+	mkdir 8.4 && cd 8.4 && \
+	  cvs -qz6 -d$(TCL_CVS) co -r core-8-4-branch tcl && \
+	  cvs -qz6 -d$(TK_CVS) co -r core-8-4-branch tk
+	mkdir 8.5 && cd 8.5 && \
+	  cvs -qz6 -d$(TCL_CVS) co -r core-8-5-branch tcl && \
+	  cvs -qz6 -d$(TK_CVS) co -r core-8-5-branch tk
 
 tars:
 	mkdir 8.x && cd 8.x && \
@@ -9,13 +33,13 @@ tars:
 	  wget -q $(TAR_URL)/vqtcl.tgz && tar xfz vqtcl.tgz && \
 	  rm *gz && mv vfs tclvfs
 	mkdir 8.4 && cd 8.4 && \
-	  wget -q $(TAR_URL)/tcl.tar.gz && tar xfz tcl.tar.gz && \
-	  wget -q $(TAR_URL)/tk.tar.gz && tar xfz tk.tar.gz && \
+	  wget -q $(TCL_URL)/tcl8.4.19-src.tar.gz && tar xfz tcl8.4.19-src.tar.gz && \
+	  wget -q $(TK_URL)/tk8.4.19-src.tar.gz && tar xfz tk8.4.19-src.tar.gz && \
 	  rm *gz
 	mkdir 8.5 && cd 8.5 && \
-	  wget -q $(TAR_URL)/tcl85.tar.gz && tar xfz tcl85.tar.gz && \
-	  wget -q $(TAR_URL)/tk85.tar.gz && tar xfz tk85.tar.gz && \
-	  rm *gz && mv tcl85 tcl && mv tk85 tk
+	  wget -q $(TCL_URL)/tcl8.5.6-src.tar.gz && tar xfz tcl8.5.6-src.tar.gz && \
+	  wget -q $(TK_URL)/tk8.5.6-src.tar.gz && tar xfz tk8.5.6-src.tar.gz && \
+	  rm *gz
 
 configs:
 	sh config.sh 8.4/base-std
