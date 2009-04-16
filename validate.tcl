@@ -8,7 +8,8 @@
 puts "version : Tcl [info patchlevel] $tcl_platform(osVersion) $tcl_platform(machine)"
 
 # check packages
-set ext {rechan registry dde starkit }
+set ext {rechan starkit}
+if {$tcl_platform(platform) eq "windows"} { lappend ext registry dde }
 foreach lib [info loaded] {
     if {[lindex $lib 1] eq "zlib"} {lappend ext zlib}
     if {[lindex $lib 1] eq "Mk4tcl"} {lappend ext Mk4tcl}
