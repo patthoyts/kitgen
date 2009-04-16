@@ -242,8 +242,12 @@ proc mk_tclvfs_index {src} {
   global versmap
   set fin [open $src r]
   set fout [open ${src}.tclkit w]
-  puts $fout [string map $versmap \
-    "package ifneeded vfs [package provide vfs] \[list load {} vfs\]"]
+  set script [string map [list @V [package provide vfs]] {
+      package ifneeded vfs @V "load {} vfs;\
+          source \[file join [list $dir] vfsUtils.tcl\];\
+          source \[file join [list $dir] vfslib.tcl\]"
+  }]
+  puts $fout $script
   while {[gets $fin line] != -1} {
     foreach pkg {starkit vfslib vfs::mk4 vfs::zip vfs::tar mk4vfs} {
       if {[string match "package ifneeded $pkg *" $line]} {
