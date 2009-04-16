@@ -172,17 +172,7 @@ tclkit-cli.exe: kit-cli.exe tidy
 	@$(COPY) kit-cli.exe $@
 	-@$(UPXCOMP)
 	kit-cli.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ cli
-	$@ <<
-puts "version : Tcl [info patchlevel] $$tcl_platform(osVersion) $$tcl_platform(machine)"
-set ext {starkit rechan registry dde}
-foreach lib [info loaded] {if {[lindex $$lib 1] eq "zlib"} {lappend ext zlib}}
-foreach pkg $$ext {package require $$pkg}
-set f [open [info nameofexecutable]/boot.tcl r]
-list [seek $$f 0 end] [tell $$f] [close $$f]
-interp create slave
-slave eval [list foreach pkg $$ext {package require $$pkg}]
-<<
-
+	$@ ../../validate.tcl
 
 tclkit-gui.exe: kit-gui.exe tidy
 	@$(COPY) kit-gui.exe $@
@@ -220,16 +210,7 @@ tclkitsh.exe: kitsh.exe tidy
 	@$(COPY) kitsh.exe $@
 	-@$(UPXCOMP)
 	kitsh.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ cli
-	$@ <<
-puts "version : Tcl [info patchlevel] $$tcl_platform(osVersion) $$tcl_platform(machine)"
-set ext {starkit rechan registry dde Mk4tcl Itcl}
-foreach lib [info loaded] {if {[lindex $$lib 1] eq "zlib"} {lappend ext zlib}}
-foreach pkg $$ext {package require $$pkg}
-set f [open [info nameofexecutable]/boot.tcl r]
-list [seek $$f 0 end] [tell $$f] [close $$f]
-interp create slave
-slave eval [list foreach pkg $$ext {package require $$pkg}]
-<<
+	$@ ../../validate.tcl
 
 tclkit.exe: kitsh.exe kit.exe tidy
 	@$(COPY) kit.exe $@
@@ -244,7 +225,7 @@ kitsh.exe: setup tcl mk itcl $(PARTS:vqtcl=) files $(CLIOBJS)
 	  $(BUILD)\mk4tcl.obj $(BUILD)\mk4too.obj \
 	  $(BUILD)\lib\vfs1.4\vfs1*.lib \
 	  $(BUILD)\lib\mk4vc*.lib \
-	  $(BUILD)\lib\itcl3.4\itcl3*.lib \
+r	  $(BUILD)\lib\itcl3.4\itcl3*.lib \
 	  $(BUILD)\lib\tcl$V*.lib \
 	  $(BUILD)\lib\tcldde1*.lib \
 	  $(BUILD)\lib\tclreg1*.lib $(LIBS)
@@ -372,6 +353,25 @@ files:
 
 setup:
 	@if not exist $(BUILD) mkdir $(BUILD)
+
+release:
+	@if exist tclkit-cli.exe (\
+	    $(COPY) tclkit-cli.exe tmp.exe \
+	) else ( \
+	    $(COPY) tclkitsh.exe tmp.exe \
+	)
+	@tmp.exe <<
+set D "release-[package provide Tcl]"
+set V [string map {. {}} [package provide Tcl]]
+puts "copying executables to $$D"
+file mkdir $$D
+foreach {f s} {tclkit-cli - tclkit-gui - tclkitsh "" tclkit ""} {
+    if {[file exists $$f.exe]} {
+        file copy -force $$f.exe $$D/$$f$$s$$V.exe
+    }
+}
+<<
+	@del tmp.exe >NUL
 
 tidy:
 	@echo Tidying...

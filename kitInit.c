@@ -86,13 +86,15 @@ static void TclKit_InitStdChannels(void);
  *  If there isn't one, try to open a regular "setup.tcl" file instead.
  *  If that fails, this code will throw an error, using a message box.
  *
- * The appInitCmd will only be run once in the main (initial) interpreter.
- * The preInitCmd will be registered to run in any created interpreter.
+ *  The tclKitPreInit script gets run for every interpreter and there are
+ *  guards in the boot.tcl to avoid re-initializing things than do not need
+ *  it. This is required to make child interpreters and thread interps
+ *  initialize properly.
  */
 
-static char appInitCmd[] = 
-"proc tclKitInit {} {\n"
-    "rename tclKitInit {}\n"
+static char preInitCmd[] = 
+"proc tclKitPreInit {} {\n"
+    "rename tclKitPreInit {}\n"
     "load {} tclkitpath\n"
     /*"puts \"appInit: [encoding system] $::tcl::kitpath\"\n"*/
 #if KIT_INCLUDES_ZLIB
@@ -128,20 +130,6 @@ static char appInitCmd[] =
     "} else {\n"
         "error \"\n  $::tcl::kitpath has no VFS data to start up\"\n"
     "}\n"
-"}\n"
-"tclKitInit"
-;
-
-static char preInitCmd[] =
-"proc tclKitPreInit {} {\n"
-    "rename tclKitPreInit {}\n"
-    /* In 8.5 we need to set these paths for child interps */
-    "global tcl_library tcl_libPath tcl_version\n"
-    "load {} tclkitpath\n"
-    "set noe $::tcl::kitpath\n"
-    "set tcl_library [file join $noe lib tcl$tcl_version]\n"
-    "set tcl_libPath [list $tcl_library [file join $noe lib]]\n"
-    "set tcl_pkgPath [list $tcl_library [file join $noe lib]]\n"
 "}\n"
 "tclKitPreInit"
 ;
@@ -228,8 +216,7 @@ TclKit_AppInit(Tcl_Interp *interp)
 #endif
 
     TclSetPreInitScript(preInitCmd);
-    if ((Tcl_EvalEx(interp, appInitCmd, -1, TCL_EVAL_GLOBAL) == TCL_ERROR)
-           || (Tcl_Init(interp) == TCL_ERROR))
+    if (Tcl_Init(interp) == TCL_ERROR)
         goto error;
 
 #if defined(KIT_INCLUDES_TK) && defined(_WIN32)
