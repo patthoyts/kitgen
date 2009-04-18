@@ -225,7 +225,7 @@ kitsh.exe: setup tcl mk itcl $(PARTS:vqtcl=) files $(CLIOBJS)
 	  $(BUILD)\mk4tcl.obj $(BUILD)\mk4too.obj \
 	  $(BUILD)\lib\vfs1.4\vfs1*.lib \
 	  $(BUILD)\lib\mk4vc*.lib \
-r	  $(BUILD)\lib\itcl3.4\itcl3*.lib \
+	  $(BUILD)\lib\itcl3.4\itcl3*.lib \
 	  $(BUILD)\lib\tcl$V*.lib \
 	  $(BUILD)\lib\tcldde1*.lib \
 	  $(BUILD)\lib\tclreg1*.lib $(LIBS)

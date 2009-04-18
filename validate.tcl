@@ -20,6 +20,7 @@ foreach pkg $ext {lappend r $pkg [package require $pkg]}
 puts "main  : $r"
 
 # check seeking on vfs file
+if {![info exists ::tcl::kitpath]} {set ::tcl::kitpath [info nameofexecutable]}
 set f [open [file join $::tcl::kitpath  boot.tcl] r]
 list [seek $f 0 end] [tell $f] [close $f]
 
