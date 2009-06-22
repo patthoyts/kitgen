@@ -62,6 +62,14 @@ LINK    = link -nologo
 CFLAGS  = -W3 -D_WINDOWS -DWIN32 -DSTATIC_BUILD
 BUILD   = $(MAKEDIR)\build
 
+# NOTE: if you do this then the tcl::pkgconfig command will
+#       work but you better ensure that the paths you embed
+#       a actually utf-8 (in reality - ASCII).
+#       Without this, the registration of the pkgconfig data will
+#       fail becuase cp1252 is unavailable at registration time.
+TCL_MAKE_FLAGS = CFG_ENCODING="\"\\\"utf-8\\\"\""
+TK_MAKE_FLAGS = $(TCL_MAKE_FLAGS)
+
 !if $V == 84
 PARTS   = vqtcl vfs
 OPTS    = static,msvcrt
@@ -250,7 +258,7 @@ kit.exe: setup tcl tk mk itcl $(PARTS:vqtcl=) files $(GUIOBJS)
 tcl: $(BUILD)\lib\tcl$V$X.lib
 $(BUILD)\lib\tcl$V$X.lib:
 	pushd ..\tcl\win & $(MAKE) -f Makefile.vc INSTALLDIR=$(BUILD) \
-	  OPTS=$(OPTS) TMP_DIR=$(BUILD)\tcl \
+	  OPTS=$(OPTS) TMP_DIR=$(BUILD)\tcl $(TCL_MAKE_FLAGS) \
 	  OUT_DIR=$(BUILD)\tcl release & \
 	  $(MAKE) -f Makefile.vc INSTALLDIR=$(BUILD) \
 	  OPTS=$(OPTS) TMP_DIR=$(BUILD)\tcl \
@@ -259,7 +267,7 @@ $(BUILD)\lib\tcl$V$X.lib:
 tk: $(BUILD)\lib\tk$V$X.lib
 $(BUILD)\lib\tk$V$X.lib:
 	pushd ..\tk\win & $(MAKE) -f Makefile.vc INSTALLDIR=$(BUILD) \
-	  TCLDIR=$(BUILD)\..\..\tcl OPTS=$(OPTS) \
+	  TCLDIR=$(BUILD)\..\..\tcl OPTS=$(OPTS) $(TK_MAKE_FLAGS) \
 	  TMP_DIR=$(BUILD)\tk OUT_DIR=$(BUILD)\tk \
 	  core $(BUILD)\tk\wish.res install-libraries
 	$(COPY) $(BUILD)\tk\tk$V$X.lib $(BUILD)\lib
