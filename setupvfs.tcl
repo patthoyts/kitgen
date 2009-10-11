@@ -83,6 +83,7 @@ if {$lite} {
 set clifiles {
   boot.tcl
   config.tcl
+  tclkit.ico
   lib/tcl8@/auto.tcl
   lib/tcl8@/history.tcl
   lib/tcl8@/init.tcl
@@ -118,7 +119,6 @@ if {$lite} {
 }
 
 set guifiles {
-  tclkit.ico
   lib/tk8@/bgerror.tcl
   lib/tk8@/button.tcl
   lib/tk8@/choosedir.tcl
