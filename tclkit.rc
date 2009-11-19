@@ -69,7 +69,7 @@ BEGIN
             VALUE "FileDescription", "Tclkit, a standalone runtime for Tcl/Tk\0"
             VALUE "OriginalFilename", "tclkit-gui.exe\0"
             VALUE "CompanyName", "Equi4 Software\0"
-            VALUE "LegalCopyright", "Copyright \251 1989-2003 by J.Ousterhout et al.\0"
+            VALUE "LegalCopyright", "Copyright \251 1989-2009 by J.Ousterhout et al.\0"
 #ifdef TCLKIT_WITH_TK
             VALUE "FileVersion", TK_PATCH_LEVEL
             VALUE "ProductName", "Tclkit " TK_VERSION " for Windows\0"
@@ -79,6 +79,12 @@ BEGIN
             VALUE "ProductName", "Tclkit " TCL_VERSION " for Windows\0"
             VALUE "ProductVersion", TCL_PATCH_LEVEL
 #endif
+            VALUE "Comments", "Comments\0More Comments\0"
+            VALUE "Padding",
+               "                                                            "
+               "                                                            "
+               "                                                            "
+               "                                                            \0"
         END
     END
     BLOCK "VarFileInfo"
