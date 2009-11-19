@@ -90,6 +90,9 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
 
     MINGW*)
       echo 'LDFLAGS    = build/lib/dde1*/tcldde1*.a build/lib/reg1*/tclreg1*.a'
+      if [ $root != "8.4" ]; then
+          echo 'LDFLAGS   += -lws2_32'
+      fi
       echo 'GUI_OPTS   = -lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32'
       echo 'GUI_OPTS  += -lole32 -loleaut32 -luuid'
       echo 'GUI_OPTS  += build/tk/wish.res.o -mwindows'
@@ -145,6 +148,7 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
     0) echo "KIT_OPTS   =$kitopts" ;;
   esac
   
+  case $plat in win) echo "TCL_OPTS  += --with-encoding=utf-8" ;; esac
   case $tzdata in 1) echo "TCL_OPTS  += --with-tzdata" ;; esac
 
   case $gprof in 1) 

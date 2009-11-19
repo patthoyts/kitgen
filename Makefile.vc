@@ -53,6 +53,10 @@ UPX=0
 !endif
 !endif
 
+!ifndef UPXLEVEL
+UPXLEVEL=1
+!endif
+
 MAKE    = $(MAKE) -nologo
 CPY     = xcopy /i /y >NUL
 COPY    = copy /y >NUL
@@ -104,7 +108,12 @@ UPXCOMP =
 CFLAGS  = -MD -Zi -O2 -DNDEBUG $(CFLAGS)
 LDFLAGS = -debug
 !if $(UPX)
+!if $(UPXLEVEL) > 1
+# can add --ultra-brute --compress-resources=0 for release
+UPXCOMP = upx -q --ultra-brute --compress-resources=0 $@
+!else
 UPXCOMP = upx -q9 $@ >NUL
+!endif
 !endif
 !endif
 

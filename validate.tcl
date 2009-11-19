@@ -43,7 +43,9 @@ if {![catch {package require Thread}]} {
     puts "thread: $r"
 }
 
-# check pkgconfig
-tcl::pkgconfig list
-set wd [expr {[tcl::pkgconfig get 64bit] ? "64bit" : "32bit"}]
-puts "pkgconfig: $wd [tcl::pkgconfig get {bindir,runtime}]"
+# check pkgconfig in 8.5+
+if {[package vsatisfies [package provide Tcl] 8.5]} {
+    tcl::pkgconfig list
+    set wd [expr {[tcl::pkgconfig get 64bit] ? "64bit" : "32bit"}]
+    puts "pkgconfig: $wd [tcl::pkgconfig get {bindir,runtime}]"
+}

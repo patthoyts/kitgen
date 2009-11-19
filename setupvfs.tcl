@@ -160,6 +160,41 @@ foreach f { lib/tk8@/prolog.ps lib/tk8@/icons.tcl } {
 if {$encOpt} {
   lappend clifiles lib/tcl8@/encoding
 } else {
+    # Microsoft Windows & DOS code pages:
+    # Win     DOS
+    # cp1250  cp852 - Central Europe
+    # cp1251  cp855 - Cyrillic
+    #         cp866 - Cyrillic II
+    # cp1252  cp850 - Latin I
+    #         cp437 - English (US)
+    # cp1253  cp737 - Greek
+    # cp1254  cp857 - Turkish
+    # cp1255  cp862 - Hebrew
+    # cp1255  cp720 - Arabic
+    # cp1257  cp775 - Baltic                  
+    # cp1258        - VietNam
+    # cp874         - Thai
+    # cp932         - Japanese
+    # cp936         - Chinese Simplified
+    # cp950         - Chinese Traditional
+
+    # IBM Code pages:
+    # cp437 - USA
+    # cp850 - Europe
+    # cp851 - Greek
+    # cp852 - Latin2
+    # cp855 - Cyrillic
+    # cp856 - Hebrew
+    # cp857 - Turkey
+    # cp860 - Portugal
+    # cp861 - Iceland
+    # cp862 - Hebrew
+    # cp863 - fr_CA
+    # cp864 - Arabic
+    # cp865 - Nordic
+    # cp866 - Cyrillic2
+    # cp874 - Thai
+
     # Minimal set
     #foreach e {ascii cp1251 cp1252 iso8859-1 iso8859-2 iso8859-3
     #    iso8859-4 iso8859-5 iso8859-6 iso8859-7 iso8859-8 iso8859-9
@@ -173,7 +208,7 @@ if {$encOpt} {
     #  gb2312-raw jis0208 jis0212 ksc601 shiftjis
     foreach e {ascii cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257
         cp1258 cp437 cp737 cp775 cp850 cp852 cp855 cp857 cp860 cp861 cp862
-        cp863 cp864 cp865 cp866 cp869 cp874 dingbats ebcdic gb1988
+        cp863 cp864 cp865 cp866 cp869 cp874 cp932 dingbats ebcdic gb1988
         iso2022 iso2022-jp iso2022-kr iso8859-1 iso8859-10 iso8859-13
         iso8859-14 iso8859-15 iso8859-16 iso8859-2 iso8859-3 iso8859-4
         iso8859-5 iso8859-6 iso8859-7 iso8859-8 iso8859-9 jis0201 koi8-r
