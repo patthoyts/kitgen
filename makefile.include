@@ -152,9 +152,16 @@ tclkitsh$(EXE): kitsh$(EXE) ../../setupvfs.tcl build/files
 	cp kitsh$(EXE) $@ && $(STRIP) $@ && $(UPX) $@
 	./kitsh -init- ../../setupvfs.tcl $(KIT_OPTS) $@ cli
 
+# the windows executable uses tk not tkdyn and is linked differently
+ifeq ($(PLAT),win)
 tclkit$(EXE): kitsh$(EXE) kit$(EXE) ../../setupvfs.tcl build/files
 	cp kit$(EXE) $@ && $(STRIP) $@ && $(UPX) $@
 	./kitsh -init- ../../setupvfs.tcl $(KIT_OPTS) $@ gui
+else
+tclkit$(EXE): kitsh$(EXE) build/tkdyn ../../setupvfs.tcl build/files
+	cp kitsh$(EXE) $@ && $(STRIP) $@ && $(UPX) $@
+	./kitsh -init- ../../setupvfs.tcl $(KIT_OPTS) $@ dyn
+endif
 
 kitsh$(EXE): build/tcl build/tclvfs build/mk build/itcl build/zlib $(CLIOBJ)
 	$(CC) -o $(OUTDIR)/kitInit$O $(CFLAGS) -DSTATIC_BUILD \
@@ -164,7 +171,7 @@ kitsh$(EXE): build/tcl build/tclvfs build/mk build/itcl build/zlib $(CLIOBJ)
 	  -Ibuild/include -DSTATIC_BUILD \
 	  build/lib/vfs1*/*vfs1*$A build/lib/Mk4tcl*/*Mk4tcl*$A \
 	  build/lib/itcl*/*itcl3*$A \
-	  build/lib/libz$A build/lib/*tcl8*$A $(LDFLAGS)
+	  build/lib/libz$A build/lib/*tcl8*$A $(LDFLAGS) $(LDXXFLAGS)
 
 kit$(EXE): build/tcl build/tk build/tclvfs build/mk build/itcl build/zlib $(GUIOBJ)
 	$(CC) -o $(OUTDIR)/kitInit$O $(CFLAGS) -DSTATIC_BUILD \
@@ -174,7 +181,8 @@ kit$(EXE): build/tcl build/tk build/tclvfs build/mk build/itcl build/zlib $(GUIO
 	  -Ibuild/include -DSTATIC_BUILD \
 	  build/lib/vfs1*/*vfs1*$A build/lib/Mk4tcl*/*Mk4tcl*$A \
 	  build/lib/libtk8*$A build/lib/itcl*/*itcl3*$A \
-	  build/lib/libz$A build/lib/*tcl8*$A $(LDFLAGS) $(GUI_OPTS)
+	  build/lib/libz$A build/lib/*tcl8*$A $(LDFLAGS)  $(LDXXFLAGS) \
+	  $(GUI_OPTS)
 
 build/mk: build/tcl
 	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \

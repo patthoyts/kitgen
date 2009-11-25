@@ -68,7 +68,9 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
       ;;
       
     Linux)
+      echo "CXX        = gcc"
       echo "LDFLAGS    = -ldl -lm"
+      echo "LDXXFLAGS  = -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic"
       echo "GUI_OPTS   = -L/usr/X11R6/lib -lX11 -lXss"
       if [ $root != "8.4" ]; then
           echo "GUI_OPTS  += -lXft -lXext"
@@ -106,8 +108,10 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
       ;;
 
     SunOS)
+      echo "CXX        = gcc"
       echo "CFLAGS    += -I/usr/openwin/include"
       echo "LDFLAGS    = -ldl -lsocket -lnsl -lm"
+      echo "LDXXFLAGS  = -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic"
       echo "GUI_OPTS   = -L/usr/openwin/lib -lX11 -lXext"
       if [ $root != "8.4" ]; then
           echo "GUI_OPTS  += -L/usr/sfw/lib -lXft -lfreetype -lz -lfontconfig -lXrender"
