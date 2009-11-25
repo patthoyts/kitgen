@@ -185,6 +185,7 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
   case $gui in 1) targets="$targets tclkit-gui" ;; esac
   case $mk in 
     1)  case $cli in 1) targets="$targets tclkitsh" ;; esac
+        case $dyn in 1) targets="$targets tclkit" ;; esac
         case $gui in 1) targets="$targets tclkit" ;; esac
         ;; 
   esac
@@ -226,6 +227,7 @@ case $verbose in 1)
   case $gui in 1) echo "    $path/tclkit-gui   (Tk linked statically)" ;; esac
   case $mk in 1)
       case $cli in 1) echo "    $path/tclkitsh     (old-style command line)" ;; esac
+      case $dyn in 1) echo "    $path/tclkit       (old-style with Tk)" ;; esac
       case $gui in 1) echo "    $path/tclkit       (old-style with Tk)" ;; esac
       ;;
   esac
