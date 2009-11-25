@@ -148,9 +148,15 @@ set guifiles {
   lib/tk8@/tkfbox.tcl
   lib/tk8@/unsupported.tcl
   lib/tk8@/xmfbox.tcl
+  lib/tk8@/images/logo64.gif
 }
 # handle new or deleted files
-foreach f { lib/tk8@/prolog.ps lib/tk8@/icons.tcl } {
+foreach f {
+    lib/tk8@/prolog.ps
+    lib/tk8@/fontchooser.tcl
+    lib/tk8@/icons.tcl
+    lib/tk8@/iconlist.tcl
+} {
     set fx [string map $versmap $f]
     if {[file exists build/$fx]} {
         lappend guifiles $f
