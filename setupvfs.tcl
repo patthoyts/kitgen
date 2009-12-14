@@ -306,6 +306,11 @@ proc vfscopy {argv} {
   global vfs versmap
   
   foreach f $argv {
+    # avoid emacs and cvs temporary files.
+    if {[string match "*~" $f] || [string match ".#*" $f]} {
+      puts "skipping file '$f'"
+      continue
+    }
     set f [string map $versmap $f]
     
     set d $vfs/[file dirname $f]
@@ -315,7 +320,21 @@ proc vfscopy {argv} {
 
     set src [locatefile $f]
     set dest $vfs/$f
+
+    # If the source is a directory, recurse.
+    if {[file isdir $src]} {
+      set contents {}
+      foreach ff [glob -nocomplain -directory $src -tails *] {
+        lappend contents $f/$ff
+      }
+      vfscopy $contents
+      continue
+    }
     
+    if {$::debugOpt} {
+      puts "  $f \[$src\] ==>  \$vfs/$f"
+    }
+
     switch -- [file extension $src] {
       .tcl - .txt - .msg - .test {
         # get line-endings right for text files - this is crucial for boot.tcl
@@ -454,3 +473,9 @@ vfs::unmount $vfs
 if {$debugOpt} {
   puts "\nDone with [info script]"
 }
+
+# Local variables:
+# mode: tcl
+# indent-tabs-mode: nil
+# tcl-indent-level: 2
+# End:
