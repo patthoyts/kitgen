@@ -125,6 +125,7 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
   esac
 
   echo "PLAT       = $plat"
+  echo "KITFLAGS   ="
   case $plat in unix)
     echo "PRIV       = install-private-headers" ;;
   esac

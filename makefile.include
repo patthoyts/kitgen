@@ -1,16 +1,10 @@
 # -*- Makefile -*-
-# NOTE: this file requires GNU Make.
 #
-#PLAT = unix
-#PRIV = install-private-headers
+#	This file should be included from your platform specific
+#	Makefile. See the README documents and config.sh.
 #
-# Linux:
-#LDFLAGS = -L/usr/X11R6/lib -lX11 -ldl -lm # -lpthread
+#	NOTE: this file requires GNU Make.
 #
-# Mac OS X:
-#LDFLAGS = -framework CoreFoundation -L/usr/X11R6/lib -lX11 -weak-lXss -lXext
-#LDFLAGS = -framework CoreFoundation -framework Carbon -framework IOKit
-#LDSTRIP = -x
 
 EXTDIR = ../../../../8.x
 STATIC = --disable-shared
@@ -19,6 +13,7 @@ OBJ    = $(OUTDIR)/pwb$O $(OUTDIR)/rechan$O $(OUTDIR)/zlib$O
 CLIOBJ ?= $(OBJ) $(OUTDIR)/tclAppInit$O
 DYNOBJ ?= $(CLIOBJ)
 GUIOBJ ?= $(CLIOBJ)
+KITFLAGS ?=
 TCLDIR = --with-tcl=../lib --prefix=$(OUTDIR) --exec-prefix=$(OUTDIR)
 STRIP ?= strip
 UPX   ?= :
@@ -29,6 +24,7 @@ SO    ?=.so
 tclkit-cli$(EXE): kit-cli$(EXE) ../../setupvfs.tcl build/files
 	cp kit-cli$(EXE) $@ && $(STRIP) $@ && $(UPX) $@
 	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ cli
+	$@ ../../validate.tcl
 
 tclkit-dyn$(EXE): kit-dyn$(EXE) ../../setupvfs.tcl build/files
 	cp kit-dyn$(EXE) $@ && $(STRIP) $@ $@ && $(UPX) $@
@@ -40,19 +36,19 @@ tclkit-gui$(EXE): kit-cli$(EXE) kit-gui$(EXE) ../../setupvfs.tcl build/files
 
 kit-cli$(EXE): build/tcl build/tclvfs build/vqtcl build/zlib $(CLIOBJ)
 	$(CC) -o $@ $(CFLAGS) ../../kitInit.c $(CLIOBJ) \
-	  -Ibuild/include -DKIT_LITE -DSTATIC_BUILD \
+	  -Ibuild/include -DKIT_LITE -DSTATIC_BUILD $(KITFLAGS) \
 	  build/lib/vfs1*/*vfs1*$A build/lib/vqtcl4*/*vqtcl4*$A \
 	  build/lib/libz$A build/lib/*tcl8*$A $(LDFLAGS)
 
 kit-dyn$(EXE): build/tcl build/tclvfs build/vqtcl build/zlib build/tkdyn $(CLIOBJ)
 	$(CC) -o $@ $(CFLAGS) ../../kitInit.c $(DYNOBJ) \
-	  -Ibuild/include -DKIT_LITE -DSTATIC_BUILD \
+	  -Ibuild/include -DKIT_LITE -DSTATIC_BUILD $(KITFLAGS) \
 	  build/lib/vfs1*/*vfs1*$A build/lib/vqtcl4*/*vqtcl4*$A \
 	  build/lib/libz$A build/lib/*tcl8*$A $(LDFLAGS)
 
 kit-gui$(EXE): build/tcl build/tk build/tclvfs build/vqtcl build/zlib $(GUIOBJ)
 	$(CC) -o $@ $(CFLAGS) ../../kitInit.c $(GUIOBJ) \
-	  -Ibuild/include -DKIT_LITE -DSTATIC_BUILD \
+	  -Ibuild/include -DKIT_LITE -DSTATIC_BUILD $(KITFLAGS) \
 	  build/lib/vfs1*/*vfs1*$A build/lib/vqtcl4*/*vqtcl4*$A \
 	  -DKIT_INCLUDES_TK build/lib/libtk8*$A \
 	  build/lib/libz$A build/lib/*tcl8*$A $(LDFLAGS) $(GUI_OPTS)
@@ -151,6 +147,7 @@ $(OUTDIR)/tclkitsh.res.o: ../../tclkit.rc
 tclkitsh$(EXE): kitsh$(EXE) ../../setupvfs.tcl build/files
 	cp kitsh$(EXE) $@ && $(STRIP) $@ && $(UPX) $@
 	./kitsh -init- ../../setupvfs.tcl $(KIT_OPTS) $@ cli
+	$@ ../../validate.tcl
 
 # the windows executable uses tk not tkdyn and is linked differently
 ifeq ($(PLAT),win)
@@ -165,7 +162,7 @@ endif
 
 kitsh$(EXE): build/tcl build/tclvfs build/mk build/itcl build/zlib $(CLIOBJ)
 	$(CC) -o $(OUTDIR)/kitInit$O $(CFLAGS) -DSTATIC_BUILD \
-	  -DKIT_INCLUDES_ITCL \
+	  -DKIT_INCLUDES_ITCL $(KITFLAGS) \
 	  -Ibuild/include -c ../../kitInit.c
 	$(CXX) -o $@ $(CFLAGS) $(OUTDIR)/kitInit$O $(CLIOBJ) \
 	  -Ibuild/include -DSTATIC_BUILD \
@@ -175,7 +172,7 @@ kitsh$(EXE): build/tcl build/tclvfs build/mk build/itcl build/zlib $(CLIOBJ)
 
 kit$(EXE): build/tcl build/tk build/tclvfs build/mk build/itcl build/zlib $(GUIOBJ)
 	$(CC) -o $(OUTDIR)/kitInit$O $(CFLAGS) -DSTATIC_BUILD \
-	  -DKIT_INCLUDES_ITCL -DKIT_INCLUDES_TK \
+	  -DKIT_INCLUDES_ITCL -DKIT_INCLUDES_TK $(KITFLAGS) \
 	  -Ibuild/include -c ../../kitInit.c
 	$(CXX) -o $@ $(CFLAGS) $(OUTDIR)/kitInit$O $(GUIOBJ) \
 	  -Ibuild/include -DSTATIC_BUILD \
@@ -196,4 +193,3 @@ build/itcl: build/tcl
 
 # end
 #-------------------------------------------------------------------------
-
