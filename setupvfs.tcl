@@ -17,11 +17,13 @@ set msgsOpt 0
 set threadOpt none
 set tzOpt 0 
 set customOpt {}
+set minimalEncodings 0
 
 while {1} {
   switch -- [lindex $argv 0] {
     -d { incr debugOpt }
     -e { incr encOpt }
+    -E { incr minimalEncodings }
     -m { incr msgsOpt }
     -t { set threadOpt dynamic }
     -T { set threadOpt static }
@@ -60,7 +62,7 @@ if {$lite} {
 } else {
     lappend versmap Mk4tcl@ Mk4tcl[package require Mk4tcl]
 }
-               
+
 if {$debugOpt} {
   puts "Starting [info script]"
   puts "     exe: [info nameofexe]"
@@ -210,19 +212,29 @@ if {$encOpt} {
     #    lappend clifiles lib/tcl8@/encoding/$e.enc
     #}
 
-    # ActiveTcl basekit encodings: this just avoids the largest files:
-    #  big5 cp932 cp936 cp949 cp950 euc-cn euc-jp euc-kr gn12345 gb2312
-    #  gb2312-raw jis0208 jis0212 ksc601 shiftjis
+    #  Load the basic encodings set...
     foreach e {ascii cp1250 cp1251 cp1252 cp1253 cp1254 cp1255 cp1256 cp1257
         cp1258 cp437 cp737 cp775 cp850 cp852 cp855 cp857 cp860 cp861 cp862
-        cp863 cp864 cp865 cp866 cp869 cp874 cp932 dingbats ebcdic gb1988
+        cp863 cp864 cp865 cp866 cp869 cp874 cp932 
         iso2022 iso2022-jp iso2022-kr iso8859-1 iso8859-10 iso8859-13
         iso8859-14 iso8859-15 iso8859-16 iso8859-2 iso8859-3 iso8859-4
-        iso8859-5 iso8859-6 iso8859-7 iso8859-8 iso8859-9 jis0201 koi8-r
-        koi8-u macCentEuro macCroatian macCyrillic macDingbats macGreek
-        macIceland macRoman macRomania macThai macTurkish macUkraine
-        symbol tis-620} {
+        iso8859-5 iso8859-6 iso8859-7 iso8859-8 iso8859-9 jis0201
+    } {
+      lappend clifiles lib/tcl8@/encoding/$e.enc
+    }
+    # Usually include the remaining encodings to match activetcl basekits.
+    # This just avoids the largest files:
+    #  big5 cp932 cp936 cp949 cp950 euc-cn euc-jp euc-kr gn12345 gb2312
+    #  gb2312-raw jis0208 jis0212 ksc601 shiftjis
+    if {!$minimalEncodings} {
+      foreach e {
+        dingbats ebcdic gb1988
+        koi8-r koi8-u macCentEuro macCroatian macCyrillic macDingbats
+        macGreek macIceland macRoman macRomania macThai macTurkish
+        macUkraine symbol tis-620
+      } {
         lappend clifiles lib/tcl8@/encoding/$e.enc
+      }
     }
 }
 
