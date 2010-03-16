@@ -68,6 +68,12 @@ build/threaddyn: build/tcl
 	  sh $(EXTDIR)/thread/configure $(TCLDIR) $(THREADDYN_OPTS) && \
 	  $(MAKE) install-binaries install-libraries
 
+thread: build/thread
+build/thread: build/tcl
+	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
+	  sh $(EXTDIR)/thread/configure $(STATIC) $(TCLDIR) $(THREAD_OPTS) && \
+	  $(MAKE) install-binaries install-libraries
+
 build/tk: build/tcl
 	mkdir -p $@ && cd $@ && CFLAGS="$(CFLAGS)" && export CFLAGS && \
 	  sh ../../../tk/$(PLAT)/configure $(STATIC) $(TCLDIR) $(TK_OPTS) && \

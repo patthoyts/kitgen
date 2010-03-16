@@ -14,7 +14,7 @@ set argv [lrange $argv 2 end] ;# strip off the leading "-init- setupvfs.tcl"
 set debugOpt 0
 set encOpt 0 
 set msgsOpt 0 
-set threadOpt 0
+set threadOpt none
 set tzOpt 0 
 set customOpt {}
 
@@ -23,7 +23,8 @@ while {1} {
     -d { incr debugOpt }
     -e { incr encOpt }
     -m { incr msgsOpt }
-    -t { incr threadOpt }
+    -t { set threadOpt dynamic }
+    -T { set threadOpt static }
     -z { incr tzOpt }
     -c {
         set customOpt [lindex $argv 1]
@@ -225,8 +226,15 @@ if {$encOpt} {
     }
 }
 
-if {$threadOpt} {
-  lappend clifiles lib/[glob -tails -dir build/lib thread2*]
+switch -exact -- $threadOpt {
+  static {
+    foreach file [glob -tails -dir build/lib/thread2.6.5 *.tcl] {
+      lappend clifiles lib/Thread/$file
+    }
+  }
+  dynamic {
+    lappend clifiles lib/[glob -tails -dir build/lib thread2*]
+  }
 }
 
 if {$tcl_version eq "8.4"} {
@@ -419,6 +427,7 @@ switch [info sharedlibext] {
 set exts {rechan}
 if {![package vsatisfies [package provide Tcl] 8.6]} { lappend exts zlib }
 if {[package vcompare [package provide Tcl] 8.4] == 0} { lappend exts pwb }
+if {$threadOpt eq "static"} { lappend exts Thread }
 foreach ext $exts {
     staticpkg $ext
 }
