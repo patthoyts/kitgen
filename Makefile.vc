@@ -93,6 +93,11 @@ KITOPTS = -t
 LIBS    = user32.lib gdi32.lib ws2_32.lib
 !endif
 
+!if $V > 85
+# Jan has been messing with the linker requirements in 8.6
+LIBS = $(LIBS) $(BUILD)\lib\tclstub$V.lib
+!endif
+
 !if $V < 86
 PARTS = $(PARTS) zlib
 LIBS  = $(BUILD)\lib\zlib.lib $(LIBS) 
