@@ -32,7 +32,7 @@ if {[llength [info command zlib]] || ![catch {load "" zlib}]} {
 # Use 8.6 reflected channels or the rechan package in earlier versions to
 # provide a memory channel implementation.
 #
-if {[info command ::chan] ne {}} {
+if {[package vsatisfies [package provide Tcl] 8.6]} {
 
     # As the core zlib channel stacking make non-seekable channels we cannot
     # implement vfs::zstream and this feature is disabled in tclkit boot.tcl

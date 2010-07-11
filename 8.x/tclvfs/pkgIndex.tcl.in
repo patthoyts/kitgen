@@ -32,10 +32,19 @@ package ifneeded vfs::tk      0.5 [list source [file join $dir tkvfs.tcl]]
 #
 # Virtual filesystems based on the template vfs:
 #
-if {[lsearch -exact $::auto_path [file join $dir template]] == -1} {
-    lappend ::auto_path [file join $dir template]
-}
-package ifneeded vfs::template 1.5.4 \
+package ifneeded vfs::template::chroot 1.5.2 \
+    [list source [file join $dir template chrootvfs.tcl]]
+package ifneeded vfs::template::collate 1.5.2 \
+    [list source [file join $dir template collatevfs.tcl]]
+package ifneeded vfs::template::version 1.5.2 \
+    [list source [file join $dir template versionvfs.tcl]]
+package ifneeded vfs::template::version::delta 1.5.2 \
+    [list source [file join $dir template deltavfs.tcl]]
+package ifneeded vfs::template::fish 1.5.2 \
+    [list source [file join $dir template fishvfs.tcl]]
+package ifneeded vfs::template::quota 1.5.2 \
+    [list source [file join $dir template quotavfs.tcl]]
+package ifneeded vfs::template 1.5.3 \
     [list source [file join $dir template templatevfs.tcl]]
 #
 # Helpers

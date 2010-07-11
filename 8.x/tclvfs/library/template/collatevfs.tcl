@@ -5,7 +5,7 @@ collatevfs.tcl --
 
 Written by Stephen Huntley (stephen.huntley@alum.mit.edu)
 License: Tcl license
-Version 1.5.3
+Version 1.5
 
 A collate/broadcast/collect/catchup virtual filesystem.  Requires the template vfs in templatevfs.tcl.
 
@@ -78,6 +78,7 @@ mount -read C:/install/package/images FTP:/pub/releases/package/images -collect 
 }
 
 package require vfs::template 1.5
+package provide vfs::template::collate 1.5.2
 
 namespace eval ::vfs::template::collate {
 
@@ -92,10 +93,7 @@ foreach templateProc [namespace eval ::vfs::template {info procs}] {
 proc close_ {channel} {
 	upvar root root relative relative
 	foreach file [lrange [WriteFile $root $relative close] 1 end] {
-		if ![WriteTest $file] {continue}
-		file mkdir [file dirname $file]
 		set f [open $file w]
-		fconfigure $f -translation binary
 		seek $channel 0
 		fcopy $channel $f
 		close $f
@@ -104,18 +102,17 @@ proc close_ {channel} {
 }
 proc file_atime {file time} {
 	upvar root root relative relative
-	foreach file [WriteFile $root $relative open] {
-		file atime $file $time
-	}
+	set file [AcquireFile $root $relative]
+	file atime $file $time
 }
 proc file_mtime {file time} {
 	upvar root root relative relative
-	foreach file [WriteFile $root $relative open] {
-		file mtime $file $time
-	}
+	set file [AcquireFile $root $relative]
+	file mtime $file $time
 }
 proc file_attributes {file {attribute {}} args} {
 	upvar root root relative relative
+	set file [AcquireFile $root $relative]
 	if {($relative == {}) && ([string map {-read 1 -write 1 -collect 1 -catchup 1} $attribute] == 1)} {
 		set attribute [string range $attribute 1 end]
 		if {$args == {}} {eval return \$::vfs::template::collate::${attribute}(\$root)}
@@ -123,13 +120,6 @@ proc file_attributes {file {attribute {}} args} {
 		set ::vfs::template::collate::catchup [file isdirectory [lindex $::vfs::template::collate::catchupstore 0]]
 		return
 	}
-	if {$args != {}} {
-		foreach file [WriteFile $root $relative open] {
-			file attributes $file $attribute $args
-		}
-		return
-	}
-	set file [AcquireFile $root $relative]
 	set returnValue [eval file attributes \$file $attribute $args]
 	if {($relative == {}) && ($attribute == {})} {set returnValue [concat $returnValue [list -read $::vfs::template::collate::read($root) -write $::vfs::template::collate::write($root) -collect $::vfs::template::collate::collect($root) -catchup $::vfs::template::collate::catchupstore($root)]]}
 	return $returnValue
@@ -361,10 +351,6 @@ proc WriteFile {root relative action} {
 		}
 	}
 	return $returnValue
-}
-
-proc WriteTest {args} {
-	return 1
 }
 
 }
