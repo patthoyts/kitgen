@@ -1,98 +1,41 @@
-Kitgen
-======
-
-[Kitgen][1] consists of a makefile, scripts, and C source code to generate
-variations of [Tclkit Lite][2], a version of [Tclkit][3] based on [Vlerq][4].
-
-  [1]: http://www.equi4.com/kitgen.html
-  [2]: http://www.equi4.com/tclkitlite.html
-  [3]: http://www.equi4.com/tclkit.html
-  [4]: http://www.vlerq.org/
-
-Kitgen is pronounced "kit-chen".
-
-
-News
-----
-
-  * 2008-09-05 : improvements in initialization of encodings
-  * 2008-04-11 : support for producing stardll/basekit dlls
-  * 2007-11-24 : support for building metakit based tclkits (old style)
-  * 2007-05-03 : changes in cvs & build structure
-  * 2007-04-04 : added kbs.tcl, the Kitgen Build System - see README.kbs
-  * 2007-01-11 : fixed a vfs thread issue in boot.tcl, by Jeff Hobbs
-  * 2006-12-20 : fixed typo, mention the FFF feedback forum below
-  * 2006-12-15 : added *BSD support (use gmake i.s.o. make)
-  * 2006-12-12 : doc tweaks, added "cvs" target, support vlerq safe interps
-  * 2006-12-06 : updated to vlerq 4.1 and vfs::m2m 1.8
-  * 2006-12-05 : added "base" & "tidy" targets for Tcl/Tk-only builds
-  * 2006-12-04 : added "gcov" and "gprof" options, keep symbols with "sym" opt
-  * 2006-12-01 : added "b64" option to enable 64-bit compiles
-  * 2006-11-21 : simpler makefile, tweaked to work with Mingw on Win32
-  * 2006-11-19 : first release, tested on Mac OS X and Linux x86 only so far
-  
-----
-
-**UPDATE, MAY 2007:** _The build notes below are no longer working.
-  The CVS repository at equi4.com was replaced by a Subversion
-  repository.  Snapshots of the necessary packages are available for
-  download at [www.equi4.com](http://equi4.com/pub/tk/tars) but it is
-  recommended to obtain current CVS or SVN checkouts of the packages.
-  The latest source for the "Vlerq" extension is in "vqtcl.tgz" and
-  the latest kitgen source is in "kitgen.tgz". See also the new
-  [mailing list](http://groups.google.com/group/starkit) for more
-  details._
-
-----
-
-Overview
---------
-
-To build Tclkit Lite, you need to bring several pieces together:
-
-  * sources for Tcl and Tk
-  * sources for the Thread, TclVFS, and Vlerq extensions
-  * sources for Zlib
-  * the files in this Kitgen package
-  
-There are several ways to go about this, depending on whether you want to use
-the latest sources in cvs, or tarfile releases, or your own custom versions.
-
-
 Quick start
------------
+===========
 
-These instructions are for a Unix-type system and do a build using CVS sources:
+This project contains the files required to build TclKit versions. You
+must provide a version of tcl and optionally tk to be used but
+everything else is provided.
 
-    cvs -d :pserver:anonymous@equi4.com:/home/cvs co kitgen
-    cd kitgen
-    make tars
-    make small
-    
-That's it.  This produces two executables in `8.4/kit-small/`:
+1. Fetch your chosen release tarballs of tcl and tk from
+   http://prdownloads.sourceforge.net/tcl/
 
-  * `tclkit-cli` - a tclsh-like console app
-  * `tclkit-dyn` - wish-like, after a `package require Tk`
+2. Create a build directory to hold these sources and the build files
+   for these versions. For instance, if you intend to build 8.6 and
+   8.5 tclkits, use mkdir 8.5 8.6
 
-Or, to build a threaded Tcl/Tk 8.5 build with all encodings and more included:
+3. Configure the build target using config.sh and provide the target
+   build directory.
 
-    cvs -d :pserver:anonymous@equi4.com:/home/cvs co kitgen
-    cd kitgen
-    make tars
-    make large
-    
-In this case a third executable is also produced:
+For instance:
+    wget http://prdownloads.sourceforge.net/tcl/tcl8.5.8-src.tar.gz
+    wget http://prdownloads.sourceforge.net/tcl/tk8.5.8-src.tar.gz
+    mkdir 8.5
+    tar -C 8.5 -xzvf tcl8.5.8-src.tar.gz
+    tar -C 8.5 -xzvf tk8.5.8-src.tar.gz
+    mv 8.5/tcl8.5.8 8.5/tcl
+    mv 8.5/tk8.5.8 8.5/tk
+    sh config.sh 8.5/linux-ix86 thread mk cli dyn
+    cd 8.5/linux-ix86
+    make
 
-  * `tclkit-gui` - same as "tclkit-dyn", but with Tk linked-in statically
-
-On **Mac OS X**, "make large" builds a universal binary for PowerPC and Intel.
-
-On **Windows** you can use this approach if you download `msys_mingw 0.8` from
-<http://tcl.sourceforge.net/> (make sure you extract to a path without spaces).
-Then launch `msys.bat` to get a bash shell and proceed further as above.
-The binaries will end up as "tclkit-{cli,dyn,gui}.exe" in this case.
-
-You can use `make cvs` to update all cvs areas under `8.4/` and `8.5/`.
+On Windows you can follow the above using msys-gcc or you can
+construct the proper directory tree but instead of running config.sh
+you can just create 8.5/win32-ix86 and create a Makefile containing
+just:
+   !include ../../Makefile.vc
+   all: lite heavy
+Then build using nmake. This has been tested with msvc6 (for 32 bit
+compilation) and the 64 bit msvc8 that comes with the platform sdk for
+server 2003.
 
 
 Tcl/Tk builds
