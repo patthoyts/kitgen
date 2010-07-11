@@ -1,0 +1,80 @@
+<html><head>
+<title>vlerq - Vlerq data manipulation core engine </title>
+</head>
+<! -- Generated from file './doc/vlerq.man' by tcllib/doctools with format 'html'
+   -->
+<! -- CVS: $Id: vlerq.html 7 2009-02-20 14:00:31Z patthoyts $ vlerq.n
+   -->
+
+<body>
+<h1> vlerq(n) 4 vlerq &quot;Vlerq data manipulation core engine&quot;</h1>
+<h2><a name="name">NAME</a></h2>
+<p>
+<p> vlerq - The engine used by the Ratcl extension
+
+
+
+<h2><a name="table_of_contents">TABLE OF CONTENTS</a></h2>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#table_of_contents">TABLE OF CONTENTS</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#synopsis">SYNOPSIS</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#description">DESCRIPTION</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#commands">COMMANDS</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#example">EXAMPLE</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#see_also">SEE ALSO</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#keywords">KEYWORDS</a><br>
+<h2><a name="synopsis">SYNOPSIS</a></h2>
+<p>
+package require <b>vlerq ?4?</b><br>
+<br><table border=1 width=100% cellspacing=0 cellpadding=0><tr            bgcolor=lightyellow><td bgcolor=lightyellow><table 0 width=100% cellspacing=0 cellpadding=0><tr valign=top ><td ><a href="#1"><b class='cmd'>vlerq</b> <i class='arg'>command</i> <i class='arg'>...</i></a></td></tr>
+<tr valign=top ><td ><a href="#2"><b class='cmd'>vlerq</b> <b class='cmd'>open</b> <i class='arg'>filename</i></a></td></tr>
+</table></td></tr></table>
+<h2><a name="description">DESCRIPTION</a></h2>
+<p>
+<p>
+
+The <strong>vlerq</strong> package provides commands used by the Ratcl extension
+to implement a general-purpose relational algebra and persistence framework.
+
+<h2><a name="commands">COMMANDS</a></h2>
+<p>
+<dl>
+
+<dt><a name="1"><b class='cmd'>vlerq</b> <i class='arg'>command</i> <i class='arg'>...</i></a><dd>
+
+
+The <b class='cmd'>vlerq</b> command wraps all the different sub-commands provided by
+the <strong>vlerq</strong> package.
+
+<br><br>
+<dt><a name="2"><b class='cmd'>vlerq</b> <b class='cmd'>open</b> <i class='arg'>filename</i></a><dd>
+
+
+The <b class='cmd'>open</b> sub-command opens a Metakit-compatible datafile and returns
+its root view.
+
+</dl>
+
+<p>
+THIS DOCUMENTATION NEEDS TO BE FINISHED
+
+<h2><a name="example">EXAMPLE</a></h2>
+<p>
+
+<p>
+<p><table><tr><td bgcolor=black>&nbsp;</td><td><pre class='sample'>
+package require vlerq
+set v [vlerq open myfile.db]
+puts [vlerq names $v]
+</pre></td></tr></table></p>
+<p>
+This lists all the sub-views available in the myfile.db file.
+
+
+
+<h2><a name="see_also">SEE ALSO</a></h2>
+<p>
+metakit, ratcl
+<h2><a name="keywords">KEYWORDS</a></h2>
+<p>
+algebra, database, persistence, relational
+</body></html>

@@ -1,0 +1,93 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {load extension} {
+    package require vlerq
+} $version
+
+test 1 {load m2mvfs package} vfs {
+    if {[file exists src_tcl/m2mvfs.tcl]} {
+      source src_tcl/m2mvfs.tcl
+    } else {
+      source library/m2mvfs.tcl
+    }
+    package require vfs::m2m
+} 1.8
+
+test 2 {} vfs {
+    vfs::m2m::Mount "" mem
+} {m2m}
+
+test 3 {} vfs {
+    ::vfs::filesystem unmount mem
+    # TODO: detect repeated mounts, should probably be an error
+    vfs::m2m::Mount m2m.tmp mem
+} {m2m}
+
+test 4 {} vfs {
+    glob -nocomplain mem/*
+} {}
+
+test 5 {} -constraints vfs -body {
+    set fd [open mem/aa w]
+} -match regexp -result {^(rechan\d+|mem\d+)$}
+
+test 6 {} vfs {
+    glob -nocomplain mem/*
+} mem/aa
+
+test 7 {} vfs {
+    file size mem/aa
+} 0
+
+test 8 {} vfs {
+    puts -nonewline $fd haha
+    close $fd
+    file size mem/aa
+} 4
+
+test 9 {} vfs {
+    file mkdir mem/d
+} {}
+
+test 10 {} vfs {
+    set fd [open mem/d/ff w]
+    puts -nonewline $fd wow
+    close $fd
+    file size mem/d/ff
+} 3
+
+test 11 {} vfs {
+    set fd [open mem/d/eee w]
+    puts -nonewline $fd "Hello world!"
+    close $fd
+    file size mem/d/eee
+} 12
+
+test 12 {} vfs {
+    glob mem/*
+} {mem/aa mem/d}
+
+test 13 {} vfs {
+    glob mem/d/*
+} {mem/d/ff mem/d/eee}
+
+test 14 {} vfs {
+    file delete m2m.tmp
+    vfs::unmount mem
+} {}
+
+test 15 {} vfs {
+    file size m2m.tmp
+} 191
+
+test 16 {} vfs {
+    #puts [exec xxd m2m.tmp]
+    file delete m2m.tmp
+} {}
+
+unset -nocomplain fd
+
+::tcltest::cleanupTests

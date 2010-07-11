@@ -1,0 +1,324 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {} {
+    package require vlerq
+} $version
+
+test 1 {} {
+    vlerq set [vlerq def A {a b c}] 1 A XYZ
+} {data {mdef A} {a XYZ c}}
+
+test 2 {} {
+    vlerq set [vlerq def A:B {d e f}] 1 A ABC
+} {data {mdef A:B} {d ABC f}}
+
+test 3 {} {
+    vlerq set [vlerq def A:I {1 2 3}] 1 A 22
+} {data {mdef A:I} {1 22 3}}
+
+test 4 {} {
+    vlerq set [vlerq def A:L {1 2 3}] 1 A 112233445566
+} {data {mdef A:L} {1 112233445566 3}}
+
+test 5 {} {
+    vlerq set [vlerq def A:F {1.5 2.5 3.5}] 1 A 4.5
+} {data {mdef A:F} {1.5 4.5 3.5}}
+
+test 6 {} {
+    vlerq set [vlerq def A:D {1.1 2.2 3.3}] 1 A 4.567890123
+} {data {mdef A:D} {1.1 4.567890123 3.3}}
+
+test 7 {} {
+    set v [vlerq group [vlerq def {A B} {a A1 a A2 b B1 b B2}] A G]
+} {data {mdef {A {G B}}} {a b} {{data {mdef B} {A1 A2}}\
+                                  {data {mdef B} {B1 B2}}}}
+test 8 {} {
+    vlerq set $v 1 G [vlerq def B {1 2 3}]
+} {data {mdef {A {G B}}} {a b} {{data {mdef B} {A1 A2}}\
+                                  {data {mdef B} {1 2 3}}}}
+test 9 {} {
+    set v [vlerq def A {a b c d e}]
+    vlerq size [vlerq delete $v 1 3]
+} 2
+
+test 10 {} {
+    vlerq delete $v 1 3
+} {data {mdef A} {a e}}
+
+test 11 {} {
+    vlerq mutinfo [vlerq delete $v 1 3]
+} {{data {mdef A} {}} 0 0 {0 1 1 1 0} {0 0} {0 0} {}}
+
+test 12 {} {
+    vlerq delete $v 0 3
+} {data {mdef A} {d e}}
+
+test 13 {} {
+    vlerq delete $v 2 3
+} {data {mdef A} {a b}}
+
+test 14 {} {
+    vlerq replace $v 1 3 [vlerq def A {1 2 3}]
+} {data {mdef A} {a 1 2 3 e}}
+
+test 15 {} {
+    vlerq mutinfo [vlerq replace $v 1 3 [vlerq def A {1 2 3}]]
+} {{data {mdef A} {1 2 3}} 0 0 {0 1 1 1 0} {0 0} {0 1 1 1 0} {}}
+
+test 16 {} {
+    vlerq append $v [vlerq def A {1 2 3}]
+} {data {mdef A} {a b c d e 1 2 3}}
+
+test 17 {} {
+    vlerq mutinfo [vlerq append $v [vlerq def A {1 2 3}]]
+} {{data {mdef A} {1 2 3}} 0 0 {0 0 0 0 0} {0 0 0 0 0} {0 0 0 0 0 1 1 1} {}}
+
+test 18 {} {
+    set v [vlerq insert $v 2 [vlerq def A {1 2 3}]]
+} {data {mdef A} {a b 1 2 3 c d e}}
+
+test 19 {} {
+    vlerq mutinfo $v
+} {{data {mdef A} {1 2 3}} 0 0 {0 0 0 0 0} {0 0 0 0 0} {0 0 1 1 1 0 0 0} {}}
+
+test 20 {} {
+    vlerq set $v 3 A zz
+} {data {mdef A} {a b 1 zz 3 c d e}}
+
+set v [vlerq def {A B C} {1 2 3 11 22 33 111 222 333}]
+
+test 21 {} {
+    set w [vlerq set $v 1 B x22]
+} {data {mdef {A B C}} {1 11 111} {2 x22 222} {3 33 333}}
+
+test 22 {} {
+    vlerq mutinfo $w
+} {{data {mdef {A B C}} {} {} {}}\
+     {data {mdef {A B C}} 11 x22 33}\
+     {data {mdef {_:I _:I _:I}} 0 1 0} {0 0 0} {0 1 0} {0 0 0} 0}
+
+test 23 {check row count is still 3} {
+    vlerq size $w
+} 3
+    
+test 24 {verify new contents} {
+    vlerq get $w
+} {1 2 3 11 x22 33 111 222 333}
+    
+test 25 {check v has not changed} {
+    vlerq get $v
+} {1 2 3 11 22 33 111 222 333}
+    
+test 26 {insert one row} {
+    set w [vlerq insert $v 1 [vlerq def {A B C} {x y z}]]
+} {data {mdef {A B C}} {1 x 11 111} {2 y 22 222} {3 z 33 333}}
+    
+test 27 {} {
+    vlerq size $w
+} 4
+    
+test 28 {verify new contents} {
+    vlerq get $w
+} {1 2 3 x y z 11 22 33 111 222 333}
+    
+test 29 {check v has not changed} {
+    vlerq get $v
+} {1 2 3 11 22 33 111 222 333}
+    
+test 30 {delete one row} {
+    set w [vlerq delete $v 1 1]
+} {data {mdef {A B C}} {1 111} {2 222} {3 333}}
+    
+test 31 {} {
+    vlerq get $w #
+} 2
+
+test 32 {verify new contents} {
+    vlerq get $w
+} {1 2 3 111 222 333}
+    
+test 33 {check v has not changed} {
+    vlerq get $v
+} {1 2 3 11 22 33 111 222 333}
+
+test 34 {} {
+    set w [vlerq group $v A G]
+    vlerq get $w 0 G
+} {data {mdef {B C}} 2 3}
+
+test 35 {set one item in subview} {
+    vlerq set [vlerq get $w 0 G] 0 B bb
+} {data {mdef {B C}} bb 3}
+
+test 36 {set one item in subview} {
+    set w [vlerq group [vlerq set $v 2 A 1] A G]
+    vlerq set [vlerq get $w 0 G] 1 B bb
+} {data {mdef {B C}} {2 bb} {3 333}}
+
+test 37 {} {
+    set v [vlerq def {A B C} {a b c aa bb cc aaa bbb ccc}]
+    vlerq set $v 1 A x B y C z
+} {data {mdef {A B C}} {a x aaa} {b y bbb} {c z ccc}}
+
+test 38 {} {
+    vlerq set [vlerq def {A B C} {a b c aa bb cc}] -1 A xx
+} {data {mdef {A B C}} {a xx} {b bb} {c cc}}
+
+test 39 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+} {data {mdef A} {1 a b 2}}
+
+test 40 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq append $v [vlerq def A {x y}]
+} {data {mdef A} {1 a b 2 x y}}
+
+test 41 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq insert $v 0 [vlerq def A {x y}]
+} {data {mdef A} {x y 1 a b 2}}
+
+test 42 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq insert $v 1 [vlerq def A {x y}]
+} {data {mdef A} {1 x y a b 2}}
+
+test 43 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq insert $v 2 [vlerq def A {x y}]
+} {data {mdef A} {1 a x y b 2}}
+
+test 44 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq insert $v 3 [vlerq def A {x y}]
+} {data {mdef A} {1 a b x y 2}}
+
+test 45 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq insert $v 4 [vlerq def A {x y}]
+} {data {mdef A} {1 a b 2 x y}}
+
+test 46 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq delete $v 0 1
+} {data {mdef A} {a b 2}}
+
+test 47 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq delete $v 1 1
+} {data {mdef A} {1 b 2}}
+
+test 48 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq delete $v 2 1
+} {data {mdef A} {1 a 2}}
+
+test 49 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq delete $v 3 1
+} {data {mdef A} {1 a b}}
+
+test 50 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq delete $v 0 2
+} {data {mdef A} {b 2}}
+
+test 51 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq delete $v 1 2
+} {data {mdef A} {1 2}}
+
+test 52 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq delete $v 2 2
+} {data {mdef A} {1 a}}
+
+test 53 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq delete $v 0 3
+} {data {mdef A} 2}
+
+test 54 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq delete $v 1 3
+} {data {mdef A} 1}
+
+test 55 {} {
+    set v [vlerq insert [vlerq def A {1 2}] 1 [vlerq def A {a b}]]
+    vlerq delete $v 0 4
+} {data {mdef A} {}}
+
+test 56 {insertion when there are no columns} {
+    vlerq insert 3 0 5
+} 8
+
+test 57 {} {
+    set v [vlerq def A {a b c d e f g h i j k l m n o p q r s t u v w x y z}]
+    for {set i 1} {$i < 25} {incr i 2} {
+      set v [vlerq set $v $i A $i]
+    }
+    set v
+} {data {mdef A} {a 1 c 3 e 5 g 7 i 9 k 11 m 13 o 15 q 17 s 19 u 21 w 23 y z}}
+
+test 58 {} {
+    set v [vlerq def {A:I B} {11 a 22 bb 33 ccc}]
+    set w [vlerq insert $v 2 [vlerq def {A:I B} {1 1 2 2}]]
+} {data {mdef {A:I B}} {11 22 1 2 33} {a bb 1 2 ccc}}
+
+test 59 {2nd insert before} {
+    set w [vlerq insert $w 1 [vlerq def {A:I B} {3 3}]]
+} {data {mdef {A:I B}} {11 3 22 1 2 33} {a 3 bb 1 2 ccc}}
+
+test 60 {} {
+    set v [vlerq def {A:I B} {11 a 22 bb 33 ccc}]
+    set w [vlerq insert $v 1 [vlerq def {A:I B} {1 1 2 2}]]
+} {data {mdef {A:I B}} {11 1 2 22 33} {a 1 2 bb ccc}}
+
+test 61 {2nd insert after} {
+    set w [vlerq insert $w 4 [vlerq def {A:I B} {3 3}]]
+} {data {mdef {A:I B}} {11 1 2 22 3 33} {a 1 2 bb 3 ccc}}
+
+test 62 {} {
+    set v [vlerq def {A:I B} {11 a 22 bb}]
+    set w [vlerq insert $v 1 [vlerq def {A:I B} {1 c 2 d 3 e}]]
+} {data {mdef {A:I B}} {11 1 2 3 22} {a c d e bb}}
+
+test 63 {delete inside insert} {
+    set w [vlerq delete $w 2 1]
+} {data {mdef {A:I B}} {11 1 3 22} {a c e bb}}
+
+test 64 {} {
+    vlerq mutinfo $w
+} {{data {mdef {A:I B}} {1 3} {c e}} 0 0 {0 0} {0 0} {0 1 1 0} {}}
+
+test 65 {} {
+    set v [vlerq def {A:I B} {11 a 22 bb 33 ccc 44 dddd 55 eeeee}]
+    set w [vlerq delete $v 1 1]
+} {data {mdef {A:I B}} {11 33 44 55} {a ccc dddd eeeee}}
+
+test 66 {two independent deletes} {
+    vlerq delete $w 2 1
+} {data {mdef {A:I B}} {11 33 55} {a ccc eeeee}}
+
+test 67 {set high row, then low row} {
+    set v [vlerq def {A B} {a A b B c C d D e E}]
+    set w [vlerq set [vlerq set $v 3 A 3] 1 B 1]
+} {data {mdef {A B}} {a b c 3 e} {A 1 C D E}}
+
+test 68 {} {
+    vlerq mutinfo $w
+} {{data {mdef {A B}} {} {}}\
+     {data {mdef {A B}} {b 3} {1 D}}\
+     {data {mdef {_:I _:I}} {0 1} {1 0}}\
+     {0 0 0 0 0} {0 1 0 1 0} {0 0 0 0 0} {1 0}}
+
+test 69 {} {
+    vlerq insert [vlerq def A {}] 0 [vlerq def A {1 2 3}]
+} {data {mdef A} {1 2 3}}
+
+unset -nocomplain v w i
+
+::tcltest::cleanupTests

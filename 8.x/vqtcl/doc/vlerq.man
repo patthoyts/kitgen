@@ -1,0 +1,42 @@
+[manpage_begin vlerq n 4]
+[moddesc   {Vlerq data manipulation core engine}]
+[titledesc {The engine used by the Ratcl extension}]
+[require vlerq [opt 4]]
+[description]
+[para]
+
+The [package vlerq] package provides commands used by the Ratcl extension
+to implement a general-purpose relational algebra and persistence framework.
+
+[section COMMANDS]
+[list_begin definitions]
+
+[call [cmd vlerq] [arg command] [arg ...]]
+
+The [cmd vlerq] command wraps all the different sub-commands provided by
+the [package vlerq] package.
+
+[call [cmd vlerq] [cmd open] [arg filename]]
+
+The [cmd open] sub-command opens a Metakit-compatible datafile and returns
+its root view.
+
+[list_end]
+
+[para]
+THIS DOCUMENTATION NEEDS TO BE FINISHED
+
+[section EXAMPLE]
+
+[para]
+[example {
+package require vlerq
+set v [vlerq open myfile.db]
+puts [vlerq names $v]
+}]
+[para]
+This lists all the sub-views available in the myfile.db file.
+
+[see_also ratcl metakit]
+[keywords database persistence relational algebra]
+[manpage_end]

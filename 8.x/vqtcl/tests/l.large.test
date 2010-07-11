@@ -1,0 +1,77 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+# large file tests, skipped by default because they take a lot of time
+
+source [file join [file dir [info script]] initests.tcl]
+set tmp [makeDirectory testfiles.tmp]
+
+test 0 {load extension} {
+    package require vlerq
+} $version
+
+proc bigview {n} {
+    vlerq repeat [vlerq group [vlerq def A [vlerq iota $n]] {} _B] $n
+}
+
+test 1 {} {
+    set v [bigview 10]
+    vlerq structdesc $v
+} {_B[A:S]}
+
+test 2 {} {
+    vlerq size [vlerq blocked $v]
+} 100
+
+test 3 {} {
+    vlerq save $v $tmp/b1.db
+} 346
+
+test 4 {} -body {
+    vlerq size [vlerq blocked [vlerq open $tmp/b1.db]]
+} -result 100 -cleanup { file delete $tmp/b1.db }
+
+test 5 {} {
+    # correct: gives same result on 32b- and 64b on 2006-12-13
+    string length [vlerq emit [bigview 7088]]
+} 268571360
+
+test 6 {} {
+    # wrong: gave different result (268651792) on 32b and 64b on 2006-12-13
+    # diff = 16 bytes less
+    string length [vlerq emit [bigview 7089]]
+} 268651808
+
+test 7 {} {
+    set v [bigview 10000]
+    vlerq size [vlerq blocked $v]
+} 100000000
+
+test 8 {} {
+    # wrong: gave different result (539080016) on 32b and 64b on 2006-12-13
+    # diff 40160 bytes = 2510x 16 bytes less
+    vlerq save $v $tmp/b2.db
+} 539120176
+
+test 9 {} -body {
+    vlerq size [vlerq blocked [vlerq open $tmp/b2.db]]
+} -result 100000000 -cleanup { file delete $tmp/b2.db }
+
+test 10 {} {
+    set v [bigview 20000]
+    vlerq size [vlerq blocked $v]
+} 400000000
+
+test 11 {} 64bit {
+    vlerq save $v $tmp/b3.db
+} 2378195504
+
+test 12 {} -constraints 64bit -body {
+    vlerq size [vlerq blocked [vlerq open $tmp/b3.db]]
+} -result 400000000 -cleanup { file delete $tmp/b3.db }
+
+test 13 {} {
+    vlerq size [vlerq blocked [bigview 40000]]
+} 1600000000
+
+::tcltest::cleanupTests

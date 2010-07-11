@@ -1,0 +1,91 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {} {
+    package require vlerq
+} $version
+
+test 1 {} {
+    set v [vlerq def A {a b c d e f}]
+    vlerq remap $v {}
+} {data {mdef A} {}}
+
+test 2 {} {
+    vlerq remap $v {1 3 5}
+} {data {mdef A} {b d f}}
+
+test 3 {} {
+    vlerq remap $v {5 3 1 0 2 4}
+} {data {mdef A} {f d b a c e}}
+
+test 4 {} {
+    vlerq remap $v {1 -1 -2 4 3 -1 5}
+} {data {mdef A} {b b b e d d f}}
+
+test 5 {} {
+    vlerq step $v 6 0 1 1
+} {data {mdef A} {a b c d e f}}
+
+test 6 {} {
+    vlerq step 0 1 1 1 1
+} 0
+
+test 7 {} {
+    vlerq step $v 5 1 1 1
+} {data {mdef A} {b c d e f}}
+
+test 8 {} {
+    vlerq step $v 3 0 2 1
+} {data {mdef A} {a a b b c c}}
+
+test 9 {} {
+    vlerq step $v 6 0 1 2
+} {data {mdef A} {a c e a c e}}
+
+test 10 {} {
+    vlerq step $v 6 -1 1 -1
+
+} {data {mdef A} {f e d c b a}}
+
+test 11 {} {
+    vlerq step $v 12 3 1 1
+} {data {mdef A} {d e f a b c d e f a b c}}
+
+test 12 {} {
+    vlerq step $v 12 3 1 -1
+} {data {mdef A} {d c b a f e d c b a f e}}
+
+test 13 {} {
+    vlerq concat [vlerq def A {}] [vlerq def A {1 2 3}]
+} {data {mdef A} {1 2 3}}
+
+test 14 {} {
+    vlerq concat [vlerq def A {a b c}] [vlerq def A {1 2 3}]
+} {data {mdef A} {a b c 1 2 3}}
+
+test 15 {} {
+    set v [vlerq data [vlerq mdef {A B}] {a b c} {1 2 3}]
+    vlerq meta [vlerq grouped $v {1 2 3} {0 1 2} G]
+} {mdef {{G {A B}}}}
+
+test 16 {} {
+    vlerq grouped $v {1 2 3} {0 1 2} G
+} {data {mdef {{G {A B}}}} {{data {mdef {A B}} a 1}\
+                               {data {mdef {A B}} b 2}\
+                               {data {mdef {A B}} c 3}}}
+test 17 {} {
+    set v [vlerq data [vlerq mdef {A B}] {a b c d e f} {1 2 3 4 5 6}]
+    vlerq grouped $v {1 3 6} {0 1 2 3 4 5} G
+} {data {mdef {{G {A B}}}} {{data {mdef {A B}} a 1}\
+                               {data {mdef {A B}} {b c} {2 3}}\
+                               {data {mdef {A B}} {d e f} {4 5 6}}}}
+test 18 {} {
+    vlerq grouped $v {1 3 6} {5 3 4 0 1 2} G
+} {data {mdef {{G {A B}}}} {{data {mdef {A B}} f 6}\
+                               {data {mdef {A B}} {d e} {4 5}}\
+                               {data {mdef {A B}} {a b c} {1 2 3}}}}
+unset -nocomplain v
+
+::tcltest::cleanupTests

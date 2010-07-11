@@ -1,0 +1,204 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {load extension} {
+    package require vlerq
+} $version
+
+test 1 {load mkclvfs package} {
+    if {[file exists src_tcl/mklite.tcl]} {
+      source src_tcl/mklite.tcl
+    } else {
+      source library/mklite.tcl
+    }
+    package require mklite
+} 0.5
+
+test 2 {open mk file} {
+    mklite::file open db data/gtest.db -readonly
+} db
+
+test 3 {root names via vlerq} {
+    vlerq names [vlerq open data/gtest.db]
+} {frequents likes serves}
+
+test 4 {root names} {
+    mklite::file views db
+} {frequents likes serves}
+
+test 5 {mk compatibility layer} {
+    mklite::emulateMk4tcl
+} {}
+
+test 6 {view sizes} {
+    set F db.frequents
+    set L db.likes
+    set S db.serves
+    list [mk::view size $F] [mk::view size $L] [mk::view size $S]
+} {10 8 9}
+
+test 7 {view names} {
+    list [mk::view info $F] [mk::view info $L] [mk::view info $S]
+} {{drinker bar perweek} {drinker beer perday} {bar beer quantity}}
+
+test 8 {get all cols} {
+    mk::get $F!2
+} {drinker sam bar cheers perweek 5}
+
+test 9 {get all cols sizes} {
+    mk::get $F!2 -size
+} {drinker 3 bar 6 perweek 1}
+
+test 10 {get one col} {
+    mk::get $F!2 bar
+} cheers
+
+test 11 {get one col size} {
+    mk::get $F!2 -size bar
+} 6
+
+test 12 {get several cols} {
+    mk::get $F!2 bar drinker
+} {cheers sam}
+
+test 13 {get several cols sizes} {
+    mk::get $F!2 -size bar drinker
+} {6 3}
+
+test 14 {frequents data} {
+    set r ""
+    mk::loop c $F { append r "  " [mk::get $c drinker bar perweek] \n }
+    set r
+} { \
+  adam lolas 1
+  woody cheers 5
+  sam cheers 5
+  norm cheers 3
+  wilt joes 2
+  norm joes 1
+  lola lolas 6
+  norm lolas 2
+  woody lolas 1
+  pierre frankies 0
+}
+
+test 15 {likes data} {
+    set r ""
+    mk::loop c $L { append r "  " [mk::get $c drinker beer perday] \n }
+    set r
+} { \
+  adam bud 2
+  wilt rollingrock 1
+  sam bud 2
+  norm rollingrock 3
+  norm bud 2
+  nan sierranevada 1
+  woody pabst 2
+  lola mickies 5
+}
+
+test 16 {serves data} {
+    set r ""
+    mk::loop c $S { append r "  " [mk::get $c bar beer quantity] \n }
+    set r
+} { \
+  cheers bud 500
+  cheers samaddams 255
+  joes bud 217
+  joes samaddams 13
+  joes mickies 2222
+  lolas mickies 1515
+  lolas pabst 333
+  winkos rollingrock 432
+  frankies snafu 5
+}
+
+test 17 {select} {
+    mk::select $F drinker norm
+} {3 5 7}
+
+test 18 {select bar} {
+    mk::select $F bar lolas
+} {0 6 7 8}
+
+test 19 {select glob} {
+    mk::select $F -glob bar *e*
+} {1 2 3 4 5 9}
+
+test 20 {select globnc} {
+    mk::select $F -globnc bar *E*
+} {1 2 3 4 5 9}
+
+test 21 {select keyword} {
+    mk::select $S -keyword beer M
+} {4 5}
+
+test 22 {select multiple or} {
+    mk::select $S -glob {bar beer} *e*
+} {0 1 2 3 4 5 8}
+
+test 23 {select sort} {
+    mk::select $S -sort beer
+} {0 2 4 5 6 7 1 3 8}
+
+test 24 {select rsort} {
+    mk::select $S -rsort beer
+} {8 3 1 7 6 5 4 2 0}
+
+test 25 {select count} {
+    mk::select $F -count 2 drinker norm
+} {3 5}
+
+test 26 {select first} {
+    mk::select $F -first 2 drinker norm
+} 7
+
+test 27 {select glob and count} {
+    mk::select $F -glob bar *e* -count 3
+} {1 2 3}
+
+test 28 {select multiple criteria} {
+    mk::select $F bar lolas drinker norm
+} 7
+
+test 29 {select nothing} {
+    mk::select $F bar maid
+} {}
+
+test 30 {select multiple criteria empty} {
+    mk::select $F drinker woody bar joes
+} {}
+
+test 31 {list of open files} {
+    mk::file open
+} {db data/gtest.db}
+
+test 32 {} {
+    mk::file close db
+} {}
+    
+test 33 {} {
+    catch { mk::file close db }
+} 1
+    
+test 34 {} {
+    catch { mklite::file views db }
+} 1
+    
+test 35 {load mk file} {
+    mklite::file open db
+    set fd [open data/gtest.db]
+    mklite::file load db $fd
+    close $fd
+    mklite::file views db
+} {frequents likes serves}
+
+test 36 {} {
+    mk::file close db
+} {}
+    
+unset -nocomplain c r S F L fd
+
+::tcltest::cleanupTests

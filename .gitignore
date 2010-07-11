@@ -1,0 +1,8 @@
+# Ignore directories created by the tools
+/sources
+/downloads
+/sources
+
+# Ignore the build directories but not the 8.x extensions directory
+/8.*/
+!/8.x

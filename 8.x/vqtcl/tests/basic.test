@@ -1,0 +1,75 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {} {
+    package require vlerq
+} $version
+
+#puts pwd-[pwd]
+#puts auto-$auto_path
+#puts loaded-[info loaded]
+
+test 1 {} {
+    vlerq type ""
+} {}
+
+test 2 {} {
+    vlerq type [list 1 2 3]
+} list
+
+test 3 {} {
+    vlerq refs [list 1 2 3]
+} 1
+
+test 4 {} -body {
+    set v [list 1 2 3]
+    vlerq refs $v
+} -result 2 -cleanup { unset v }
+
+test 5 {} {
+    vlerq viewconv [vlerq def A {a b c}]
+} {data {mdef A} {a b c}}
+
+test 6 {0-bit ints} {
+    vlerq def A:I {0 0 0}
+} {data {mdef A:I} {0 0 0}}
+
+test 7 {1-bit ints} {
+    vlerq def A:I {0 1 1 0 1 0 0 0 1}
+} {data {mdef A:I} {0 1 1 0 1 0 0 0 1}}
+
+test 8 {2-bit ints} {
+    vlerq def A:I {0 1 2 3 2 1 0}
+} {data {mdef A:I} {0 1 2 3 2 1 0}}
+
+test 9 {4-bit ints} {
+    vlerq def A:I {0 1 14 15 2 13}
+} {data {mdef A:I} {0 1 14 15 2 13}}
+
+test 10 {8-bit ints} {
+    vlerq def A:I {0 -1 100 -100}
+} {data {mdef A:I} {0 -1 100 -100}}
+
+test 11 {16-bit ints} {
+    vlerq def A:I {1234 2345 3456}
+} {data {mdef A:I} {1234 2345 3456}}
+
+test 12 {32-bit ints} {
+    vlerq def A:I {123456 0 -654321}
+} {data {mdef A:I} {123456 0 -654321}}
+
+test 13 {64-bit ints} {
+    vlerq def A:L {12345678901 23456789012}
+} {data {mdef A:L} {12345678901 23456789012}}
+
+test 14 {32-bit floats} {
+    vlerq def A:F {1.25 2.5 3.75}
+} {data {mdef A:F} {1.25 2.5 3.75}}
+
+test 15 {64-bit floats} {
+    vlerq def A:D {1234567.25 2345678.75}
+} {data {mdef A:D} {1234567.25 2345678.75}}
+
+::tcltest::cleanupTests

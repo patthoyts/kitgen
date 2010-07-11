@@ -1,0 +1,52 @@
+[manpage_begin ratcl n 4]
+[moddesc   {Relational Algebra for Tcl}]
+[titledesc {A Relational Algebra extension for Tcl}]
+[require ratcl [opt 4]]
+[description]
+[para]
+
+The [package ratcl] package implements a general-purpose relational algebra
+and persistence framework as a notation on top of the Vlerq extension.
+
+[section COMMANDS]
+[list_begin definitions]
+
+[call [cmd view] [arg arg] [cmd operator] [arg ...] | [arg ...]]
+
+The [cmd view] command wraps all the different operators provided by
+the [package vlerq] package and lets you create pipelines,
+whereby the output of one operator is fed as input to the next.
+
+[call ... [arg view] | [cmd names]]
+
+Return a list with all the column names of [arg view].
+
+[call ... [arg filename] | [cmd open]]
+
+The [cmd open] operator opens a Metakit-compatible datafile and returns
+its root view.
+
+[call ... [arg view] | [cmd to] [arg varname]]
+
+Store a view in the [arg varname] variable.
+That same view is also returned as result.
+
+[list_end]
+
+[para]
+THIS DOCUMENTATION NEEDS TO BE FINISHED
+
+[section EXAMPLE]
+
+[para]
+[example {
+package require ratcl
+view myile.db open | to v
+puts [view $v names]
+}]
+[para]
+This lists all the sub-views available in the myfile.db file.
+
+[see_also vlerq metakit]
+[keywords database persistence relational algebra]
+[manpage_end]

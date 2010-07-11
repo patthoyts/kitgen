@@ -1,0 +1,9 @@
+package ifneeded vlerq @PACKAGE_VERSION@ \
+  [list load [file join $dir lib@PACKAGE_NAME@@PACKAGE_VERSION@[info sharedlibext]] vlerq]
+
+package ifneeded ratcl @PACKAGE_VERSION@ \
+  [list source [file join $dir ratcl.tcl]]
+
+package ifneeded mklite    0.5 [list source [file join $dir mklite.tcl]]
+package ifneeded vfs::m2m  1.8 [list source [file join $dir m2mvfs.tcl]]
+package ifneeded vfs::mkcl 1.5 [list source [file join $dir mkclvfs.tcl]]

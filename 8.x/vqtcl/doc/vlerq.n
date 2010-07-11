@@ -1,0 +1,46 @@
+'\"
+'\" Generated from file './doc/vlerq.man' by tcllib/doctools with format 'nroff'
+'\"
+.so man.macros
+.TH "vlerq" n 4 vlerq "Vlerq data manipulation core engine"
+.BS
+.SH NAME
+vlerq \- The engine used by the Ratcl extension
+.SH SYNOPSIS
+package require \fBvlerq  ?4?\fR
+.sp
+\fBvlerq\fR \fIcommand\fR \fI...\fR
+.sp
+\fBvlerq\fR \fBopen\fR \fIfilename\fR
+.sp
+.BE
+.SH DESCRIPTION
+.PP
+The \fBvlerq\fR package provides commands used by the Ratcl extension
+to implement a general-purpose relational algebra and persistence framework.
+.SH COMMANDS
+.TP
+\fBvlerq\fR \fIcommand\fR \fI...\fR
+The \fBvlerq\fR command wraps all the different sub-commands provided by
+the \fBvlerq\fR package.
+.TP
+\fBvlerq\fR \fBopen\fR \fIfilename\fR
+The \fBopen\fR sub-command opens a Metakit-compatible datafile and returns
+its root view.
+.PP
+THIS DOCUMENTATION NEEDS TO BE FINISHED
+.SH EXAMPLE
+.PP
+.nf
+
+package require vlerq
+set v [vlerq open myfile.db]
+puts [vlerq names $v]
+
+.fi
+.PP
+This lists all the sub-views available in the myfile.db file.
+.SH "SEE ALSO"
+metakit, ratcl
+.SH KEYWORDS
+algebra, database, persistence, relational

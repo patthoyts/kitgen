@@ -1,0 +1,113 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {} {
+    package require vlerq
+} $version
+
+test 1 {} {
+    vlerq colconv {}
+} {}
+
+test 2 {} {
+    vlerq type [vlerq colconv {}]
+} column
+
+test 3 {} {
+    vlerq colconv {1 2 3}
+} {1 2 3}
+
+test 4 {} {
+    vlerq type [vlerq colconv {1 2 3}]
+} column
+
+test 5 {} {
+    vlerq coerce {} I
+} {}
+
+test 6 {} {
+    vlerq coerce {0 1 1000 -0 -1 -1000} I
+} {0 1 1000 0 -1 -1000}
+
+test 7 {} {
+    vlerq coerce {a aa "" 0 1 A AA "" -0 -1} S
+} {a aa {} 0 1 A AA {} -0 -1}
+
+test 8 {} {
+    vlerq iota 0
+} {}
+
+test 9 {} {
+    vlerq iota 5
+} {0 1 2 3 4}
+
+test 10 {} {
+    vlerq omitmap {2 3 7} 9
+} {0 1 4 5 6 8}
+
+test 11 {} {
+    # 2007-02-06 new, allow unsorted map
+    vlerq omitmap {2 7 3} 9
+} {0 1 4 5 6 8}
+
+test 12 {} {
+    vlerq getcol [vlerq def A {a b c}] 0
+} {a b c}
+    
+test 13 {} {
+    vlerq getcol [vlerq def A {a b c}] -1
+} {a b c}
+    
+test 14 {} {
+    vlerq getcol [vlerq def A {a b c}] A
+} {a b c}
+    
+test 15 {} {
+    vlerq getcol [vlerq def A:I {1 2 3}] A
+} {1 2 3}
+    
+test 16 {} {
+    vlerq getcol [vlerq def {A B} {a A b B c C}] 0
+} {a b c}
+    
+test 17 {} {
+    vlerq getcol [vlerq def {A B} {a A b B c C}] 1
+} {A B C}
+    
+test 18 {} {
+    vlerq getcol [vlerq def {A B} {a A b B c C}] -2
+} {a b c}
+    
+test 19 {} {
+    vlerq getcol [vlerq def {A B} {a A b B c C}] -1
+} {A B C}
+    
+test 20 {} {
+    vlerq getcol [vlerq def {A B} {a A b B c C}] A
+} {a b c}
+    
+test 21 {} {
+    vlerq getcol [vlerq def {A B} {a A b B c C}] B
+} {A B C}
+
+test 22 {} {
+    vlerq resizecol {0 11 22 33 44 55} 3 2
+} {0 11 22 0 0 33 44 55}
+
+test 23 {} {
+    set v [vlerq resizecol {0 11 22 33 44 55} 2 -3]
+} {0 11 55}
+
+test 24 {} {
+    set v [vlerq resizecol $v 2 7 ]
+} {0 11 0 0 0 0 0 0 0 55}
+
+test 25 {} {
+    set v [vlerq resizecol $v 1 -8]
+} {0 55}
+
+unset -nocomplain v
+
+::tcltest::cleanupTests

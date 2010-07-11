@@ -1,0 +1,376 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {load ratcl package} {
+    if {[file exists src_tcl/ratcl.tcl]} {
+      source src_tcl/ratcl.tcl
+    } else {
+      source library/ratcl.tcl
+    }
+    package require ratcl
+} 4
+
+test 1 {} {
+    view {A B} def {1 2 11 22 111 222} | reverse | get
+} {111 222 11 22 1 2}
+
+test 2 {} {
+    view {A B} def {1 2 11 22 111 222} | reverse | dump
+} { \
+  A    B  
+  ---  ---
+  111  222
+  11   22 
+  1    2  }
+
+test 3 {} {
+    view 3 | dump
+} {  (3 rows, no columns)}
+    
+test 4 {} {
+    view "" | dump
+} { \
+  name  type  subv
+  ----  ----  ----}
+
+# tests copied from v3
+set v [view {A B C} def {1 2 3 11 22 33 111 222 333}]
+
+test 5 {} {
+    view $v names
+} {A B C}
+
+test 6 {} {
+    view $v types
+} {S S S}
+    
+test 7 {} {
+    view $v width
+} 3
+
+test 8 {} {
+    vlerq get $v *
+} {{1 2 3} {11 22 33} {111 222 333}}
+
+test 9 {} {
+    view $v first 2 | get *
+} {{1 2 3} {11 22 33}}
+
+test 10 {} {
+    view $v last 2 | get *
+} {{11 22 33} {111 222 333}}
+
+test 11 {} {
+    view $v reverse | get *
+} {{111 222 333} {11 22 33} {1 2 3}}
+
+test 12 {} {
+    view $v repeat 2 | get *
+} {{1 2 3} {11 22 33} {111 222 333} {1 2 3} {11 22 33} {111 222 333}}
+
+test 13 {} {
+    view $v spread 2 | get *
+} {{1 2 3} {1 2 3} {11 22 33} {11 22 33} {111 222 333} {111 222 333}}
+
+test 14 {} {
+    view $v dump
+} { \
+  A    B    C  
+  ---  ---  ---
+  1    2    3  
+  11   22   33 
+  111  222  333}
+
+test 15 {} -body {
+    view $v html
+} -match glob -result {<table><style type="text/css"><!--*--></style>
+<tr><th class="row"></th><th><i>A</i></th><th><i>B</i></th><th><i>C</i></th></tr>
+<tr><td align="right" class="row">0</td><td>1</td><td>2</td><td>3</td></tr>
+<tr><td align="right" class="row">1</td><td>11</td><td>22</td><td>33</td></tr>
+<tr><td align="right" class="row">2</td><td>111</td><td>222</td><td>333</td></tr>
+</table>
+}
+
+test 16 {} {
+    namespace eval blah {
+      namespace import ::ratcl::vopdef
+      vopdef haha {v} { return abc }
+    }
+    view - haha
+} {abc}
+
+namespace forget blah
+
+test 17 {transpose} {
+    set v [view {A B C} def {1 2 3 4 5 6 7 8 9} | transpose]
+    list [view $v names] [view $v structure] [view $v get]
+} {{x0 x1 x2} SSS {1 4 7 2 5 8 3 6 9}}
+
+test 18 {transpose ints} {
+    set v [view {A:I B:I C:I} def {1 2 3 4 5 6 7 8 9} | transpose X:I]
+    list [view $v names] [view $v structure] [view $v get]
+} {{X0 X1 X2} III {1 4 7 2 5 8 3 6 9}}
+
+test 19 {use vop} {
+    view 1 use 2
+} 2
+
+test 20 {do vop} {
+    set T [view {A B C D} def {a b c d a b e f b c e f e d c d e d e f a b d e}]
+    view $T do {
+      transpose 
+      get 
+    }
+} {a a b e e a b b c d d b c e e c e d d f f d f e}
+
+test 21 {debug vop} -body {
+    set T [view {A B C D} def {a b c d a b e f b c e f e d c d e d e f a b d e}]
+    view $T debug transpose | get
+} -match glob -output {\
+ rows-in  col  msec  view-operation
+ -------  ---  ----  --------------
+       6    4    ??  transpose
+       4    6  ----  --------------
+} -result {a a b e e a b b c d d b c e e c e d d f f d f e}
+
+test 22 {use and debug vops} -body {
+    view - debug {
+      use {A B}
+      def {1 2 3 4 5 6}
+      transpose
+      get
+    }
+} -result {1 3 5 2 4 6} -match glob -output {\
+ rows-in  col  msec  view-operation
+ -------  ---  ----  --------------
+                 ??  use {A B}
+                 ??  def {1 2 3 4 5 6}
+       3    2    ??  transpose
+       2    3    ??  get
+ -------  ---  ----  --------------
+}
+
+test 23 {debug comments} -body {
+    view $T debug {
+      # start
+      transpose
+      # empty lines are not shown
+      
+      structure
+      # end
+    }
+} -result SSSSSS -match glob -output {\
+ rows-in  col  msec  view-operation
+ -------  ---  ----  --------------
+                     # start
+       6    4    ??  transpose
+                     # empty lines are not shown
+       4    6    ??  structure
+                     # end
+ -------  ---  ----  --------------
+}
+
+test 24 {frequency table} {
+    view A def {a b a b b c} | freq N | get
+} {a 2 b 3 c 1}
+
+test 25 {frequency table on unique values} {
+    view A def {b a c} | freq N | get
+} {b 1 a 1 c 1}
+
+test 26 {frequency table on a single value} {
+    view A def {a a a a} | freq N | get
+} {a 4}
+
+test 27 {} {
+    view {1 2 3} asview A:I | structdesc
+} A:I
+    
+test 28 {} {
+    view {1 2 3} asview A | structdesc
+} A:S
+
+test 29 {} {
+    view 10 asview len:I | get
+} 10
+    
+test 30 {} {
+    view [view 10 asview len:I] min len 50
+} 10
+
+test 31 {} {
+    set v [vlerq def {A B} {1 a 1 b 1 b 2 c 3 c}]
+    view $v project A | get
+} {1 2 3}
+
+test 32 {} {
+    view $v project B | get
+} {a b c}
+
+test 33 {} {
+    view $v project A B | get
+} {1 a 1 b 2 c 3 c}
+
+test 34 {} {
+    view $v project | get
+} {}
+
+test 35 {} {
+    view A:I def {1 2 3 4 5 6 9 10 11 12} | pick {1 1 0 1 1 0 0 1 1 0} | get
+} {1 2 4 5 10 11}
+
+test 36 {} {
+    set v [vlerq def {A B} {1 2 3 4}]
+    set w [vlerq reverse $v]
+} {data {mdef {A B}} {3 1} {4 2}}
+    
+test 37 {} {
+    set v [vlerq def {A B} {1 2 3 4}]
+    set w [vlerq reverse $v]
+    vlerq pair $v $w
+} {data {mdef {A B A B}} {1 3} {2 4} {3 1} {4 2}}
+    
+test 38 {} {
+    set v [vlerq def {A B} {1 2 3 4}]
+    set w [vlerq reverse $v]
+    view $v pair $w | get
+} {1 2 3 4 3 4 1 2}
+    
+test 39 {} {
+    set v [vlerq def {A B} {1 2 3 4}]
+    set w [vlerq reverse $v]
+    # 2006-12-08 failed because dump could not handle duplicate column names
+    view $v pair $w | dump
+} { \
+  A  B  A  B
+  -  -  -  -
+  1  2  3  4
+  3  4  1  2}
+
+test 40 {} -body {
+    set v [vlerq def {A B} {1 2 3 4}]
+    set w [vlerq reverse $v]
+    view $v pair $w | html
+} -match glob -result {<table><style*/style>
+<tr><th class="row"></th><th><i>A</i></th><th><i>B</i></th><th><i>A</i></th><th><i>B</i></th></tr>
+<tr><td align="right" class="row">0</td><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+<tr><td align="right" class="row">1</td><td>3</td><td>4</td><td>1</td><td>2</td></tr>
+</table>
+}
+
+set T [vlerq def {X A B C D} {0 a b c d
+                              1 e d f d
+                              2 a b e f
+                              3 b c e d
+                              4 a b d e
+                              5 e d c f}]
+test 41 {} {
+    view $T sorton A | get * X
+} {0 2 4 3 1 5}
+
+test 42 {} {
+    view $T sorton - A | get * X
+} {1 5 3 0 2 4}
+
+test 43 {} {
+    view $T sorton B | get * X
+} {0 2 4 3 1 5}
+
+test 44 {} {
+    view $T sorton - B | get * X
+} {1 5 3 0 2 4}
+
+test 45 {} {
+    view $T sorton C | get * X
+} {0 5 4 2 3 1}
+
+test 46 {} {
+    view $T sorton - C | get * X
+} {1 2 3 4 0 5}
+
+test 47 {} {
+    view $T sorton D | get * X
+} {0 1 3 4 2 5}
+
+test 48 {} {
+    view $T sorton - D | get * X
+} {2 5 4 0 1 3}
+
+test 49 {} {
+    view $T sorton D C | get * X
+} {0 3 1 4 5 2}
+
+test 50 {} {
+    view $T sorton D - C | get * X
+} {1 3 0 4 2 5}
+
+test 51 {} {
+    view $T sorton - D C | get * X
+} {2 5 4 1 3 0}
+
+test 52 {} {
+    view $T sorton - D + C | get * X
+} {5 2 4 0 3 1}
+
+test 53 {} {
+    # exercises view args > 8 and total vlerq args > 20
+    view $T sorton - D + C - A + B - C + D - A + B - C + D | get * X
+} {5 2 4 0 3 1}
+
+test 54 {} {
+    # failed, see F119
+    set m [view {A,B:I} mdesc]
+    set v [view $m data {a bb ccc} {1 22 333}]
+    vlerq unique [vlerq colmap $v {B B}]
+} {data {mdef {B:I B:I}} {1 22 333} {1 22 333}}
+
+test 55 {} {
+    vlerq unique [vlerq colmap $v {B A}]
+} {data {mdef {B:I A}} {1 22 333} {a bb ccc}}
+
+test 56 {read without hitting eof} {
+    set fd [open data/gtest.db]
+    set v [view $fd read]
+    set r [eof $fd]
+    close $fd
+    set r
+} 0
+
+test 57 {} {
+    vlerq meta $v
+} {mdef {{frequents {drinker bar perweek:I}}\
+           {likes {drinker beer perday:I}}\
+           {serves {bar beer quantity:I}}}}
+    
+test 58 {read until eof} {
+    set fd [open data/gtest.db]
+    set w [view $fd read ########] ;# fake a non-header to force reading to eof
+    set r [eof $fd]
+    close $fd
+    set r
+} 1
+
+test 59 {} {
+    vlerq meta $w
+} {mdef {{frequents {drinker bar perweek:I}}\
+           {likes {drinker beer perday:I}}\
+           {serves {bar beer quantity:I}}}}
+
+test 60 {F146 - failed assertion, cannot reproduce} {
+    view {} size; view {} do {use 5} | dump
+} {  (5 rows, no columns)}
+
+test 61 {as result} {
+    view $T as tcmd
+} tcmd
+
+test 62 {as use} {
+    tcmd size
+} 6
+
+rename tcmd ""
+unset -nocomplain T r v w m fd
+
+::tcltest::cleanupTests

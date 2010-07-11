@@ -1,0 +1,250 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+set tmp [makeDirectory testfiles.tmp]
+
+test 0 {load extension} {
+    package require vlerq
+} $version
+
+test 1 {} {
+    set v [vlerq def A a]
+    set e [vlerq emit $v]
+    string length $e
+} 38
+
+test 2 {} {
+    binary scan $e H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 26 61 00 02 80 83 41 3a 53\
+     81 82 88 81 8a 80 80 00 00 00 00 00 00 16 80 00\
+     00 0b 00 00 00 0b }
+
+test 3 {} {
+    vlerq load $e
+} {data {mdef A} a}
+
+test 4 {} {
+    vlerq emitmods $v
+} ""
+
+test 5 {} {
+    set v [vlerq set $v 0 A x]
+} {data {mdef A} x}
+
+test 6 {} {
+    vlerq mutinfo $v
+} {{data {mdef A} {}}\
+     {data {mdef A} x}\
+     {data {mdef _:I} 1} 0 1 0 0}
+
+test 7 {} {
+    set d [vlerq emitmods $v]
+    string length $d
+} 43
+
+test 8 {} {
+    binary scan $d H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 2b 01 01 78 00 02 80 80 80\
+     81 88 81 81 89 82 8a 81 8c 80 80 80 00 00 00 00\
+     00 00 1b 90 00 00 0e 00 00 00 0d }
+
+test 9 {} {
+    vlerq loadmods $d [vlerq def A a]
+} {data {mdef A} x}
+
+test 10 {} {
+    set v [vlerq def {A:I B} {11 a 22 bb 33 ccc}]
+    set e [vlerq emit $v]
+    string length $e
+} 55
+
+test 11 {} {
+    binary scan $e H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 37 0b 16 21 61 00 62 62 00\
+     63 63 63 00 32 04 80 87 41 3a 49 2c 42 3a 53 83\
+     83 88 89 8b 82 94 80 80 00 00 00 00 00 00 27 80\
+     00 00 11 00 00 00 16 }
+
+test 12 {} {
+    vlerq load $e
+} {data {mdef {A:I B}} {11 22 33} {a bb ccc}}
+
+test 13 {} {
+    vlerq emitmods $v
+} ""
+
+test 14 {} {
+    set v [vlerq set $v 1 A 44 B dd]
+} {data {mdef {A:I B}} {11 44 33} {a dd ccc}}
+
+test 15 {} {
+    vlerq mutinfo $v
+} {{data {mdef {A:I B}} {} {}}\
+     {data {mdef {A:I B}} 44 dd}\
+     {data {mdef {_:I _:I}} 1 1} {0 0 0} {0 1 0} {0 0 0} 0}
+
+test 16 {} {
+    set d [vlerq emitmods $v]
+    string length $d
+} 50
+
+test 17 {} {
+    binary scan $d H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 32 04 01 2c 01 64 64 00 03\
+     80 80 80 81 88 81 81 89 81 8a 81 8b 83 8c 81 8f\
+     80 80 80 00 00 00 00 00 00 22 90 00 00 12 00 00\
+     00 10 }
+
+test 18 {} {
+    vlerq loadmods $d [vlerq def {A:I B} {11 a 22 bb 33 ccc}]
+} {data {mdef {A:I B}} {11 44 33} {a dd ccc}}
+
+test 19 {} {
+    set v [vlerq def {A:I B} {11 a 22 bb}]
+    set w [vlerq insert $v 1 [vlerq def {A:I B} {33 ccc 44 dddd}]]
+    set d [vlerq emitmods $w]
+    string length $d
+} 51
+
+test 20 {} {
+    vlerq mutinfo $w
+} {{data {mdef {A:I B}} {33 44} {ccc dddd}} 0 0 {0 0} {0 0} {0 1 1 0} {}}
+
+test 21 {} {
+    binary scan $d H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 33 21 2c 63 63 63 00 64 64\
+     64 64 00 54 14 80 80 80 80 82 82 88 89 8a 81 93\
+     80 81 94 80 00 00 00 00 00 00 23 90 00 00 0e 00\
+     00 00 15 }
+
+test 22 {} {
+    vlerq loadmods $d $v
+} {data {mdef {A:I B}} {11 33 44 22} {a ccc dddd bb}}
+
+test 23 {} {
+    set v [vlerq def {A:I B} {11 a 22 bb 33 ccc}]
+    set w [vlerq delete $v 1 1]
+    set d [vlerq emitmods $w]
+    string length $d
+} 31
+
+test 24 {} {
+    vlerq mutinfo $w
+} {{data {mdef {A:I B}} {} {}} 0 0 {0 1 0} {0 0} {0 0} {}}
+
+test 25 {} {
+    binary scan $d H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 1f 04 80 80 81 88 80 80 80\
+     00 00 00 00 00 00 0f 90 00 00 06 00 00 00 09 }
+
+test 26 {} {
+    vlerq loadmods $d $v
+} {data {mdef {A:I B}} {11 33} {a ccc}}
+
+test 27 {} {
+    set v [vlerq def {A:I B} {11 a 22 bb 33 ccc}]
+    set w [vlerq insert $v 1 [vlerq def {A:I B} {1 1 2 2}]]
+    vlerq mutinfo $w
+} {{data {mdef {A:I B}} {1 2} {1 2}} 0 0 {0 0 0} {0 0 0} {0 1 1 0 0} {}}
+
+test 28 {} {
+    set w [vlerq insert $w 4 [vlerq def {A:I B} {3 3}]]
+    vlerq mutinfo $w
+} {{data {mdef {A:I B}} {1 2 3} {1 2 3}} 0 0 {0 0 0} {0 0 0} {0 1 1 0 1 0} {}}
+
+test 29 {} {
+    vlerq loadmods [vlerq emitmods $w] $v
+} {data {mdef {A:I B}} {11 1 2 22 3 33} {a 1 2 bb 3 ccc}}
+
+test 30 {} {
+    set v [vlerq def {A:I B} {11 a 22 bb}]
+    set w [vlerq insert $v 1 [vlerq def {A:I B} {1 c 2 d 3 e}]]
+    vlerq mutinfo $w
+} {{data {mdef {A:I B}} {1 2 3} {c d e}} 0 0 {0 0} {0 0} {0 1 1 1 0} {}}
+
+test 31 {} {
+    set w [vlerq delete $w 2 1]
+    vlerq mutinfo $w
+} {{data {mdef {A:I B}} {1 3} {c e}} 0 0 {0 0} {0 0} {0 1 1 0} {}}
+
+test 32 {} {
+    vlerq loadmods [vlerq emitmods $w] $v
+} {data {mdef {A:I B}} {11 1 3 22} {a c e bb}}
+
+test 33 {} {
+    set v [vlerq def {A:I B} {11 a 22 bb 33 ccc 44 dddd 55 eeeee}]
+    set w [vlerq delete $v 1 1]
+    vlerq mutinfo $w
+} {{data {mdef {A:I B}} {} {}} 0 0 {0 1 0 0 0} {0 0 0 0} {0 0 0 0} {}}
+
+test 34 {} {
+    set w [vlerq delete $w 2 1]
+    vlerq mutinfo $w
+} {{data {mdef {A:I B}} {} {}} 0 0 {0 1 0 1 0} {0 0 0} {0 0 0} {}}
+
+test 35 {} {
+    vlerq loadmods [vlerq emitmods $w] $v
+} {data {mdef {A:I B}} {11 33 55} {a ccc eeeee}}
+
+test 36 {bitmaps are compressed} {
+    set v [vlerq tag 10000 A]
+    set w [vlerq set $v 5000 A -123]
+    set d [vlerq emitmods $w]
+    string length $d
+} 44 ;# would be 1292 uncompressed
+
+test 37 {} {
+    vlerq slice $w 4998 1 5
+} {data {mdef A:I} {4998 4999 -123 5001 5002}}
+
+test 38 {} {
+    lreplace [vlerq mutinfo $w] 3 5 ? ? ?
+} {{data {mdef A:I} {}} {data {mdef A:I} -123} {data {mdef _:I} 1} ? ? ? 0}
+
+test 39 {} {
+    binary scan $d H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 2c 00 04 e2 20 01 38 70 01\
+     85 80 80 80 87 88 81 81 8f 81 90 80 80 00 00 00\
+     00 00 00 1c 90 00 00 0b 00 00 00 11 }
+
+test 40 {} {
+    vlerq slice [vlerq loadmods $d $v] 4998 1 5
+} {data {mdef A:I} {4998 4999 -123 5001 5002}}
+
+test 41 {} {
+    set v [vlerq def {A B} {a A b B c C d D e E}]
+    set w [vlerq set [vlerq set $v 3 A 3] 1 B 1]
+    set d [vlerq emitmods $w]
+    string length $d
+} 54
+
+test 42 {set high row, then low row} {
+    vlerq mutinfo $w
+} {{data {mdef {A B}} {} {}}\
+     {data {mdef {A B}} {b 3} {1 D}}\
+     {data {mdef {_:I _:I}} {0 1} {1 0}}\
+     {0 0 0 0 0} {0 1 0 1 0} {0 0 0 0 0} {1 0}}
+
+test 43 {} {
+    binary scan $d H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 36 0a 10 33 00 02 01 31 00\
+     02 80 80 80 81 88 82 81 89 82 8a 81 8c 80 81 8d\
+     82 8e 81 90 80 80 80 00 00 00 00 00 00 26 90 00\
+     00 15 00 00 00 11 }
+
+test 44 {} {
+    vlerq loadmods $d $v
+} {data {mdef {A B}} {a b c 3 e} {A 1 C D E}}
+
+unset -nocomplain d e v w
+
+::tcltest::cleanupTests

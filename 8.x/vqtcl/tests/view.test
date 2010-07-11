@@ -1,0 +1,34 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {load extension} {
+    package require vlerq
+} $version
+
+namespace eval ::vlerq {}
+
+test 1 {indirect view operation} -body {
+    proc ::vlerq::foo {n} { vlerq viewconv [expr {2*$n}] }
+    vlerq size {foo 123}
+} -result 246 -cleanup {
+    rename ::vlerq::foo ""
+}
+
+test 2 {recursive indirect view operation} -body {
+    proc ::vlerq::foo {n} { expr {3*$n} }
+    vlerq size {foo 123}
+} -result 369 -cleanup {
+    rename ::vlerq::foo ""
+}
+
+test 3 {} {
+    vlerq view [vlerq def A {a b c}] size
+} 3
+
+test 4 {} {
+    vlerq view A def {a b c} | repeat 3 | size
+} 9
+
+::tcltest::cleanupTests

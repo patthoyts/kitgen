@@ -1,0 +1,76 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {} {
+    package require vlerq
+} $version
+
+test 1 {} {
+    vlerq bitruns {}
+} {}
+
+test 2 {} {
+    vlerq bitruns {0 1 0 0 1 1 1 0}
+} {0 1 1 2 3 1}
+
+test 3 {} {
+    vlerq bitruns {1 0 1 1 0 0 0 1}
+} {1 1 1 2 3 1}
+
+test 4 {} {
+    vlerq bitruns [split [string repeat 0 20] ""]
+} {0 20}
+
+test 5 {} {
+    vlerq bitruns [split [string repeat 01 10] ""]
+} {0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1}
+
+test 6 {} {
+    vlerq bitruns [split [string repeat 001 10] ""]
+} {0 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1}
+
+test 7 {} {
+    vlerq bitruns [split [string repeat 00001 10] ""]
+} {0 4 1 4 1 4 1 4 1 4 1 4 1 4 1 4 1 4 1 4 1}
+
+test 8 {} {
+    vlerq bitruns [split [string repeat 000000001 10] ""]
+} {0 8 1 8 1 8 1 8 1 8 1 8 1 8 1 8 1 8 1 8 1}
+
+test 9 {} {
+    vlerq bitruns [split [string repeat 0011 10] ""]
+} {0 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2}
+
+test 10 {} {
+    vlerq bitruns [split [string repeat 0100111 5] ""]
+} {0 1 1 2 3 1 1 2 3 1 1 2 3 1 1 2 3 1 1 2 3}
+
+test 11 {} {
+    vlerq bitruns [split [string repeat 011000 10] ""]
+} {0 1 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 4 2 3}
+
+test 12 {} {
+    set z [string repeat 0 100]
+    vlerq bitruns [split ${z}1${z} ""]
+} {0 100 1 100}
+
+test 13 {} {
+    set z [string repeat 0 1000]
+    vlerq bitruns [split ${z}1${z} ""]
+} {0 1000 1 1000}
+
+test 14 {} {
+    set z [string repeat 0 10000]
+    vlerq bitruns [split ${z}1${z} ""]
+} {0 10000 1 10000}
+
+test 15 {} {
+    set z [string repeat 0 10000]
+    vlerq bitruns [split ${z}1${z}1${z} ""]
+} {0 10000 1 10000 1 10000}
+
+unset -nocomplain  z
+
+::tcltest::cleanupTests

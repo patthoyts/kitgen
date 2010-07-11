@@ -1,0 +1,96 @@
+<html><head>
+<title>ratcl - Relational Algebra for Tcl </title>
+</head>
+<! -- Generated from file './doc/ratcl.man' by tcllib/doctools with format 'html'
+   -->
+<! -- CVS: $Id: ratcl.html 7 2009-02-20 14:00:31Z patthoyts $ ratcl.n
+   -->
+
+<body>
+<h1> ratcl(n) 4 ratcl &quot;Relational Algebra for Tcl&quot;</h1>
+<h2><a name="name">NAME</a></h2>
+<p>
+<p> ratcl - A Relational Algebra extension for Tcl
+
+
+
+<h2><a name="table_of_contents">TABLE OF CONTENTS</a></h2>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#table_of_contents">TABLE OF CONTENTS</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#synopsis">SYNOPSIS</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#description">DESCRIPTION</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#commands">COMMANDS</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#example">EXAMPLE</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#see_also">SEE ALSO</a><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<a href="#keywords">KEYWORDS</a><br>
+<h2><a name="synopsis">SYNOPSIS</a></h2>
+<p>
+package require <b>ratcl ?4?</b><br>
+<br><table border=1 width=100% cellspacing=0 cellpadding=0><tr            bgcolor=lightyellow><td bgcolor=lightyellow><table 0 width=100% cellspacing=0 cellpadding=0><tr valign=top ><td ><a href="#1"><b class='cmd'>view</b> <i class='arg'>arg</i> <b class='cmd'>operator</b> <i class='arg'>...</i> | <i class='arg'>...</i></a></td></tr>
+<tr valign=top ><td ><a href="#2">... <i class='arg'>view</i> | <b class='cmd'>names</b></a></td></tr>
+<tr valign=top ><td ><a href="#3">... <i class='arg'>filename</i> | <b class='cmd'>open</b></a></td></tr>
+<tr valign=top ><td ><a href="#4">... <i class='arg'>view</i> | <b class='cmd'>to</b> <i class='arg'>varname</i></a></td></tr>
+</table></td></tr></table>
+<h2><a name="description">DESCRIPTION</a></h2>
+<p>
+<p>
+
+The <strong>ratcl</strong> package implements a general-purpose relational algebra
+and persistence framework as a notation on top of the Vlerq extension.
+
+<h2><a name="commands">COMMANDS</a></h2>
+<p>
+<dl>
+
+<dt><a name="1"><b class='cmd'>view</b> <i class='arg'>arg</i> <b class='cmd'>operator</b> <i class='arg'>...</i> | <i class='arg'>...</i></a><dd>
+
+
+The <b class='cmd'>view</b> command wraps all the different operators provided by
+the <strong>vlerq</strong> package and lets you create pipelines,
+whereby the output of one operator is fed as input to the next.
+
+<br><br>
+<dt><a name="2">... <i class='arg'>view</i> | <b class='cmd'>names</b></a><dd>
+
+
+Return a list with all the column names of <i class='arg'>view</i>.
+
+<br><br>
+<dt><a name="3">... <i class='arg'>filename</i> | <b class='cmd'>open</b></a><dd>
+
+
+The <b class='cmd'>open</b> operator opens a Metakit-compatible datafile and returns
+its root view.
+
+<br><br>
+<dt><a name="4">... <i class='arg'>view</i> | <b class='cmd'>to</b> <i class='arg'>varname</i></a><dd>
+
+
+Store a view in the <i class='arg'>varname</i> variable.
+That same view is also returned as result.
+
+</dl>
+
+<p>
+THIS DOCUMENTATION NEEDS TO BE FINISHED
+
+<h2><a name="example">EXAMPLE</a></h2>
+<p>
+
+<p>
+<p><table><tr><td bgcolor=black>&nbsp;</td><td><pre class='sample'>
+package require ratcl
+view myile.db open | to v
+puts [view $v names]
+</pre></td></tr></table></p>
+<p>
+This lists all the sub-views available in the myfile.db file.
+
+
+
+<h2><a name="see_also">SEE ALSO</a></h2>
+<p>
+metakit, vlerq
+<h2><a name="keywords">KEYWORDS</a></h2>
+<p>
+algebra, database, persistence, relational
+</body></html>

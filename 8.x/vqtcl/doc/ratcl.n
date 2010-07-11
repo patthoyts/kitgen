@@ -1,0 +1,58 @@
+'\"
+'\" Generated from file './doc/ratcl.man' by tcllib/doctools with format 'nroff'
+'\"
+.so man.macros
+.TH "ratcl" n 4 ratcl "Relational Algebra for Tcl"
+.BS
+.SH NAME
+ratcl \- A Relational Algebra extension for Tcl
+.SH SYNOPSIS
+package require \fBratcl  ?4?\fR
+.sp
+\fBview\fR \fIarg\fR \fBoperator\fR \fI...\fR | \fI...\fR
+.sp
+... \fIview\fR | \fBnames\fR
+.sp
+... \fIfilename\fR | \fBopen\fR
+.sp
+... \fIview\fR | \fBto\fR \fIvarname\fR
+.sp
+.BE
+.SH DESCRIPTION
+.PP
+The \fBratcl\fR package implements a general-purpose relational algebra
+and persistence framework as a notation on top of the Vlerq extension.
+.SH COMMANDS
+.TP
+\fBview\fR \fIarg\fR \fBoperator\fR \fI...\fR | \fI...\fR
+The \fBview\fR command wraps all the different operators provided by
+the \fBvlerq\fR package and lets you create pipelines,
+whereby the output of one operator is fed as input to the next.
+.TP
+... \fIview\fR | \fBnames\fR
+Return a list with all the column names of \fIview\fR.
+.TP
+... \fIfilename\fR | \fBopen\fR
+The \fBopen\fR operator opens a Metakit-compatible datafile and returns
+its root view.
+.TP
+... \fIview\fR | \fBto\fR \fIvarname\fR
+Store a view in the \fIvarname\fR variable.
+That same view is also returned as result.
+.PP
+THIS DOCUMENTATION NEEDS TO BE FINISHED
+.SH EXAMPLE
+.PP
+.nf
+
+package require ratcl
+view myile.db open | to v
+puts [view $v names]
+
+.fi
+.PP
+This lists all the sub-views available in the myfile.db file.
+.SH "SEE ALSO"
+metakit, vlerq
+.SH KEYWORDS
+algebra, database, persistence, relational

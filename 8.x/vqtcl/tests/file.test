@@ -1,0 +1,190 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {load extension} {
+    package require vlerq
+} $version
+
+test 1 {} {
+    vlerq meta [vlerq open data/lkit-le.db]
+} {mdef {{dirs {name parent:I {files {name size:I date:I contents:B}}}}}}
+
+test 2 {} {
+    vlerq meta [vlerq open data/lkit-be.db]
+} {mdef {{dirs {name parent:I {files {name size:I date:I contents:B}}}}}}
+
+test 3 {} -body {
+    set v [vlerq get [vlerq open data/lkit-le.db] 0 0]
+} -match glob -result {data *\
+    {<root> lib app-listk cgi1.6} {-1 0 1 1}\
+    {{data * {main.tcl ChangeLog} {67 167} {1039266154 1046092593} {* *}}\
+     {data * {} {} {} {}}\
+     {data * {pkgIndex.tcl listk.tcl tcl2html.tcl} {72 2452 5801}\
+              {1039266186 1046093102 1046093789} {* * *}}\
+     {data * {pkgIndex.tcl cgi.tcl} {532 65885} {1020940611 1020940611} {* *}}}}
+
+test 4 {} {
+    list [string length [vlerq get $v 0 2 0 3]] \
+         [string length [vlerq get $v 0 2 1 3]] \
+         [string length [vlerq get $v 2 2 0 3]] \
+         [string length [vlerq get $v 2 2 1 3]] \
+         [string length [vlerq get $v 2 2 2 3]] \
+         [string length [vlerq get $v 3 2 0 3]] \
+         [string length [vlerq get $v 3 2 1 3]]
+} {54 130 72 1132 2434 317 15621}
+    
+test 5 {} -body {
+    set w [vlerq get [vlerq open data/lkit-be.db] 0 0]
+} -match glob -result {data *\
+    {<root> lib app-listk cgi1.6} {-1 0 1 1}\
+    {{data * {ChangeLog main.tcl} {167 67} {1046092593 1039266154} {* *}}\
+     {data * {} {} {} {}}\
+     {data * {listk.tcl pkgIndex.tcl tcl2html.tcl} {2452 72 5801}\
+              {1046093102 1039266186 1046093789} {* * *}}\
+     {data * {cgi.tcl pkgIndex.tcl} {65885 532} {1020940611 1020940611} {* *}}}}
+
+test 6 {} {
+    list [string length [vlerq get $w 0 2 0 3]] \
+         [string length [vlerq get $w 0 2 1 3]] \
+         [string length [vlerq get $w 2 2 0 3]] \
+         [string length [vlerq get $w 2 2 1 3]] \
+         [string length [vlerq get $w 2 2 2 3]] \
+         [string length [vlerq get $w 3 2 0 3]] \
+         [string length [vlerq get $w 3 2 1 3]]
+} {130 54 1132 72 2434 15621 317}
+    
+test 7 {} -body {
+    set fd [open data/lkit-le.db]
+    fconfigure $fd -translation binary
+    set data [read $fd]
+    close $fd
+    vlerq get [vlerq load $data] 0 0
+} -match glob -result {data *\
+    {<root> lib app-listk cgi1.6} {-1 0 1 1}\
+    {{data * {main.tcl ChangeLog} {67 167} {1039266154 1046092593} {* *}}\
+     {data * {} {} {} {}}\
+     {data * {pkgIndex.tcl listk.tcl tcl2html.tcl} {72 2452 5801}\
+              {1039266186 1046093102 1046093789} {* * *}}\
+     {data * {pkgIndex.tcl cgi.tcl} {532 65885} {1020940611 1020940611} {* *}}}}
+
+test 8 {} -body {
+    set fd [open data/lkit-be.db]
+    fconfigure $fd -translation binary
+    set data [read $fd]
+    close $fd
+    vlerq get [vlerq load $data] 0 0
+} -match glob -result {data *\
+    {<root> lib app-listk cgi1.6} {-1 0 1 1}\
+    {{data * {ChangeLog main.tcl} {167 67} {1046092593 1039266154} {* *}}\
+     {data * {} {} {} {}}\
+     {data * {listk.tcl pkgIndex.tcl tcl2html.tcl} {2452 72 5801}\
+              {1046093102 1039266186 1046093789} {* * *}}\
+     {data * {cgi.tcl pkgIndex.tcl} {65885 532} {1020940611 1020940611} {* *}}}}
+
+test 9 {} {
+    vlerq structure $v
+} SI(SIIB)
+    
+test 10 {} {
+    vlerq structdesc $v
+} {name:S,parent:I,files[name:S,size:I,date:I,contents:B]}
+    
+test 11 {} {
+    vlerq compat $v $w
+} 1
+    
+test 12 {} {
+    vlerq compare $v $w
+} 1
+    
+test 13 {} {
+    vlerq compare $w $v
+} -1
+    
+test 14 {} {
+    set r {}
+    foreach i {0 1 2 3} {
+      lappend r [vlerq compare [vlerq get $v $i 2] [vlerq get $w $i 2]]
+    }
+    set r
+} {1 0 1 1}
+    
+test 15 {} {
+    set r {}
+    foreach i {0 1 2 3} {
+      lappend r [vlerq compare [vlerq get $w $i 2] [vlerq get $v $i 2]]
+    }
+    set r
+} {-1 0 -1 -1}
+    
+test 16 {} {
+    set r {}
+    foreach i {0 1 2 3} {
+      lappend r [vlerq compare [vlerq sort [vlerq get $v $i 2]] \
+                               [vlerq sort [vlerq get $w $i 2]]]
+    }
+    set r
+} {0 0 0 0}
+
+test 17 {} {
+    vlerq open data/gtest.db
+} {data {mdef {{frequents {drinker bar perweek:I}}\
+                 {likes {drinker beer perday:I}}\
+                 {serves {bar beer quantity:I}}}}\
+      {{data {mdef {drinker bar perweek:I}}\
+         {adam woody sam norm wilt norm lola norm woody pierre}\
+         {lolas cheers cheers cheers joes joes lolas lolas lolas frankies}\
+         {1 5 5 3 2 1 6 2 1 0}}}\
+      {{data {mdef {drinker beer perday:I}}\
+         {adam wilt sam norm norm nan woody lola}\
+         {bud rollingrock bud rollingrock bud sierranevada pabst mickies}\
+         {2 1 2 3 2 1 2 5}}}\
+      {{data {mdef {bar beer quantity:I}}\
+         {cheers cheers joes joes joes lolas lolas winkos frankies}\
+         {bud samaddams bud samaddams mickies mickies pabst rollingrock snafu}\
+         {500 255 217 13 2222 1515 333 432 5}}}}
+    
+test 18 {} {
+    set v [vlerq def {A {B C}} [list a [vlerq def C {1 2 3}] \
+                                     b [vlerq def C {4 5 6 7}]]]
+    vlerq get $v
+} {a {data {mdef C} {1 2 3}} b {data {mdef C} {4 5 6 7}}}
+
+test 19 {} {
+    vlerq get [vlerq load [vlerq emit $v]]
+} {a {data {mdef C} {1 2 3}} b {data {mdef C} {4 5 6 7}}}
+    
+test 20 {} {
+    set v [vlerq def {A B:V} [list a [vlerq def C {1 2 3}] \
+                                   b [vlerq def {D E} {4 5 6 7}]]]
+    vlerq get $v
+} {a {data {mdef C} {1 2 3}} b {data {mdef {D E}} {4 6} {5 7}}}
+
+test 21 {} {
+    vlerq meta [vlerq load [vlerq emit $v]]
+} {mdef {A {B {}}}}
+    
+test 22 {} {
+    set z [vlerq emit $v]
+    binary scan $z H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 5e 61 00 62 00 22 31 00 32\
+     00 33 00 2a 34 00 36 00 22 35 00 37 00 22 80 83\
+     43 3a 53 83 86 8d 81 93 80 80 87 44 3a 53 2c 45\
+     3a 53 82 84 94 81 98 80 84 99 81 9d 80 80 87 41\
+     3a 53 2c 42 3a 56 82 84 88 81 8c 80 9f 9e 80 00\
+     00 00 00 00 00 4e 80 00 00 11 00 00 00 3d }
+                         
+test 23 {} {
+    vlerq get [vlerq load [vlerq emit $v]] 0 *
+} {a {data {mdef C} {1 2 3}}}
+
+test 24 {} {
+    vlerq get [vlerq load [vlerq emit $v]] 1 *
+} {b {data {mdef {D E}} {4 6} {5 7}}}
+
+unset -nocomplain r v w i z fd
+    
+::tcltest::cleanupTests

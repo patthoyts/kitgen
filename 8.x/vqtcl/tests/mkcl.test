@@ -1,0 +1,133 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {load extension} {
+    package require vlerq
+} $version
+
+test 1 {load mkclvfs package} vfs {
+    if {[file exists src_tcl/mkclvfs.tcl]} {
+      source src_tcl/mkclvfs.tcl
+    } else {
+      source library/mkclvfs.tcl
+    }
+    package require vfs::mkcl
+} 1.5
+
+test 2 {} -constraints vfs -body {
+    set fs [vfs::mkcl::Mount data/lkit-le.db /try1]
+} -match glob -result mkclvfs*
+
+test 3 {} vfs {
+    glob -directory /try1 *
+} {/try1/main.tcl /try1/ChangeLog /try1/lib}
+
+test 4 {} -constraints vfs -body {
+    file stat /try1/lib sb
+    puts ""
+    parray sb
+} -match glob -output {
+sb(atime) = 0
+sb(ctime) = 0
+sb(dev)   = *
+sb(gid)   = 0
+sb(ino)   = 0
+sb(mode)  = 16895
+sb(mtime) = 0
+sb(nlink) = 3
+sb(size)  = 0
+sb(type)  = directory
+sb(uid)   = 0
+}
+
+test 5 {} -constraints vfs -body {
+    file stat /try1/ChangeLog sb
+    puts ""
+    parray sb
+} -match glob -output {
+sb(atime) = 1046092593
+sb(ctime) = 1046092593
+sb(dev)   = *
+sb(gid)   = 0
+sb(ino)   = 0
+sb(mode)  = 33279
+sb(mtime) = 1046092593
+sb(nlink) = 1
+sb(size)  = 167
+sb(type)  = file
+sb(uid)   = 0
+}
+
+test 6 {} vfs {
+    set fd [open /try1/ChangeLog]
+    set data \n
+    append data [read $fd]
+    close $fd
+    set data
+} {
+2003-02-24  jcw
+   * tcl2html.tcl: added Jeff Hobb's code to show tcl file nicely
+   * listk.tcl: adjusted to use the above for *.tcl files
+   * all: added change log
+}
+
+test 7 {} vfs {
+    file size /try1/lib/cgi1.6/cgi.tcl
+} 65885
+
+test 8 {} vfs {
+    vfs::unmount /try1
+} {}
+    
+test 9 {} -constraints vfs -body {
+    set fs [vfs::mkcl::Mount data/lkit-be.db /try2]
+} -match glob -result mkclvfs*
+
+test 10 {} vfs {
+    glob -directory /try2 *
+} {/try2/ChangeLog /try2/main.tcl /try2/lib}
+
+test 11 {} -constraints vfs -body {
+    file stat /try2/ChangeLog sb
+    puts ""
+    parray sb
+} -match glob -output {
+sb(atime) = 1046092593
+sb(ctime) = 1046092593
+sb(dev)   = *
+sb(gid)   = 0
+sb(ino)   = 0
+sb(mode)  = 33279
+sb(mtime) = 1046092593
+sb(nlink) = 1
+sb(size)  = 167
+sb(type)  = file
+sb(uid)   = 0
+}
+
+test 12 {} vfs {
+    set fd [open /try2/ChangeLog]
+    set data \n
+    append data [read $fd]
+    close $fd
+    set data
+} {
+2003-02-24  jcw
+   * tcl2html.tcl: added Jeff Hobb's code to show tcl file nicely
+   * listk.tcl: adjusted to use the above for *.tcl files
+   * all: added change log
+}
+
+test 13 {} vfs {
+    file size /try2/lib/cgi1.6/cgi.tcl
+} 65885
+
+test 14 {} vfs {
+    vfs::unmount /try2
+} {}
+
+unset -nocomplain fs fd sb
+    
+::tcltest::cleanupTests

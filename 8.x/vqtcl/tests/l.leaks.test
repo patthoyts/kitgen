@@ -1,0 +1,44 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+# memory leaks tests, skipped by default because this may take a lot of time
+
+source [file join [file dir [info script]] initests.tcl]
+
+set cmd {vlerq open data/mkblk.db}
+set cmd {vlerq def {A B C} {1 2 3 4 5 6 7 8 9}}
+set cmd {vlerq loop [vlerq def A {1 2}] { append a $(A) }; unset a "" }
+
+proc memuse {} {
+  set out [exec ps l -p [pid]]
+  lindex [split $out \n] 1 [lsearch $out RSS]
+}
+
+test 0 {} {
+    package require vlerq
+} $version
+
+memuse
+
+test 1 {} {
+    memuse
+} [memuse]
+
+test 2 {} {
+    eval $cmd
+    return
+} {}
+
+test 3 {} {
+    eval $cmd
+    memuse
+} [memuse]
+
+test 4 {} {
+    for {set i 0} {$i < 10000} {incr i} {
+      eval $cmd
+    }
+    memuse
+} [memuse]
+
+::tcltest::cleanupTests

@@ -1,0 +1,219 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+set tmp [makeDirectory testfiles.tmp]
+
+test 0 {load extension} {
+    package require vlerq
+} $version
+
+test 1 {} {
+    set v [vlerq emit 123]
+    string length $v
+} 27
+
+test 2 {} {
+    vlerq load $v
+} 123
+
+test 3 {} -body {
+    binary scan $v H* w
+    regsub -all {..} $w {& }
+} -match glob -result {4? 4? 1a 00 00 00 00 1b 80 80 fb 80 00 00 00 00\
+                         00 00 0b 80 00 00 03 00 00 00 08 }
+test 4 {} {
+    set fd [open $tmp/t1.db w]
+    fconfigure $fd -translation binary
+    set r [vlerq write 124 $fd]
+    close $fd
+    set r
+} 27
+    
+test 5 {} {
+    vlerq open $tmp/t1.db
+} 124
+    
+test 6 {} {
+    vlerq save 125 $tmp/t2.db
+} 27
+    
+test 7 {} {
+    vlerq open $tmp/t2.db
+} 125
+    
+test 8 {} {
+    set v [vlerq emit [vlerq def A {a b c}]]
+    string length $v
+} 42
+
+test 9 {} {
+    vlerq load $v
+} {data {mdef A} {a b c}}
+
+test 10 {} -body {
+    binary scan $v H* w
+    regsub -all {..} $w {& }
+} -match glob -result {4? 4? 1a 00 00 00 00 2a 61 00 62 00 63 00 2a 80\
+                         83 41 3a 53 83 86 88 81 8e 80 80 00 00 00 00 00\
+                         00 1a 80 00 00 0b 00 00 00 0f }
+test 11 {} {
+    set fd [open $tmp/t3.db w]
+    fconfigure $fd -translation binary
+    set r [vlerq write [vlerq def A {a b d}] $fd]
+    close $fd
+    set r
+} 42
+
+test 12 {} {
+    vlerq open $tmp/t3.db
+} {data {mdef A} {a b d}}
+    
+test 13 {} {
+    vlerq save [vlerq def A {a b e}] $tmp/t4.db
+} 42
+
+test 14 {} {
+    vlerq open $tmp/t4.db
+} {data {mdef A} {a b e}}
+
+test 15 {fix binary input conversion: used Tcl string i.s.o. bytearray} {
+    binary scan [vlerq emit [vlerq def A:B \xAB\xAC\xAD\xAE\xAF]] H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 29 ab ac ad ae af 05 80 83\
+     41 3a 42 81 85 88 81 8d 80 80 00 00 00 00 00 00\
+     19 80 00 00 0b 00 00 00 0e }
+    
+test 16 {fix to preserve null bytes inside B fields} {
+    binary scan [vlerq emit [vlerq def A:B \xAB\x00\xAC\x00\xAD]] H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 29 ab 00 ac 00 ad 05 80 83\
+     41 3a 42 81 85 88 81 8d 80 80 00 00 00 00 00 00\
+     19 80 00 00 0b 00 00 00 0e }
+
+test 17 {} {
+    set v [vlerq group [vlerq def A {a aa aaa}] {} v] 
+    set w [vlerq group 123 {} w] 
+    set x [vlerq group [vlerq def {B C} {b c bb cc}] {} x] 
+    set y [vlerq pair $v [vlerq pair $w $x]]
+} {data {mdef {{v A} {w {}} {x {B C}}}} {{data {mdef A} {a aa aaa}}}\
+                                          123\
+                                          {{data {mdef {B C}} {b bb} {c cc}}}}
+test 18 {} {
+    set z [vlerq emit $y]
+    binary scan $z H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 63 61 00 61 61 00 61 61 61\
+     00 32 04 80 83 89 88 82 91 80 80 80 fb 62 00 62\
+     62 00 32 63 00 63 63 00 32 80 82 85 9d 81 a2 80\
+     85 a3 81 a8 80 80 95 76 5b 41 3a 53 5d 2c 77 3a\
+     56 2c 78 5b 42 3a 53 2c 43 3a 53 5d 81 87 93 83\
+     9a 8c a9 80 00 00 00 00 00 00 53 80 00 00 1e 00\
+     00 00 35 }
+     
+test 19 {} {
+    vlerq load $z
+} {data {mdef {{v A} {w {}} {x {B C}}}} {{data {mdef A} {a aa aaa}}}\
+                                          123\
+                                          {{data {mdef {B C}} {b bb} {c cc}}}}
+test 20 {} {
+    set z [vlerq emit [vlerq def {{A B}} [list [vlerq def B {1 2}] \
+                                               [vlerq def B {3 4 5}]]]]
+    binary scan $z H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 3d 31 00 32 00 22 33 00 34\
+     00 35 00 2a 80 82 84 88 81 8c 80 80 83 86 8d 81\
+     93 80 80 86 41 5b 42 3a 53 5d 82 8e 94 80 00 00\
+     00 00 00 00 2d 80 00 00 0b 00 00 00 22 }
+
+test 21 {} {
+    set z [vlerq emit [vlerq def A:V [list [vlerq def B {1 2}] \
+                                           [vlerq def C {3 4 5}]]]]
+    binary scan $z H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 42 31 00 32 00 22 33 00 34\
+     00 35 00 2a 80 83 42 3a 53 82 84 88 81 8c 80 80\
+     83 43 3a 53 83 86 8d 81 93 80 80 83 41 3a 56 82\
+     96 94 80 00 00 00 00 00 00 32 80 00 00 08 00 00\
+     00 2a }
+                         
+test 22 {} {
+    vlerq load $z
+} {data {mdef {{A {}}}} {{data {mdef B} {1 2}} {data {mdef C} {3 4 5}}}}
+
+test 23 {0-bit ints} {
+    vlerq load [vlerq emit [vlerq def A:I {0 0 0}]]
+} {data {mdef A:I} {0 0 0}}
+
+test 24 {1-bit ints} {
+    vlerq load [vlerq emit [vlerq def A:I {0 1 1 0 1 0 0 0 1}]]
+} {data {mdef A:I} {0 1 1 0 1 0 0 0 1}}
+
+test 25 {2-bit ints} {
+    vlerq load [vlerq emit [vlerq def A:I {0 1 2 3 2 1 0}]]
+} {data {mdef A:I} {0 1 2 3 2 1 0}}
+
+test 26 {4-bit ints} {
+    vlerq load [vlerq emit [vlerq def A:I {0 1 14 15 2 13}]]
+} {data {mdef A:I} {0 1 14 15 2 13}}
+    
+test 27 {8-bit ints} {
+    vlerq load [vlerq emit [vlerq def A:I {0 -1 100 -100}]]
+} {data {mdef A:I} {0 -1 100 -100}}
+    
+test 28 {16-bit ints} {
+    vlerq load [vlerq emit [vlerq def A:I {1234 2345 3456}]]
+} {data {mdef A:I} {1234 2345 3456}}
+    
+test 29 {32-bit ints} {
+    vlerq load [vlerq emit [vlerq def A:I {123456 0 -654321}]]
+} {data {mdef A:I} {123456 0 -654321}}
+    
+test 30 {64-bit ints} {
+    vlerq load [vlerq emit [vlerq def A:L {12345678901 23456789012}]]
+} {data {mdef A:L} {12345678901 23456789012}}
+
+test 31 {32-bit floats} {
+    vlerq load [vlerq emit [vlerq def A:F {1.25 2.5 3.75}]]
+} {data {mdef A:F} {1.25 2.5 3.75}}
+
+test 32 {64-bit floats} {
+    vlerq load [vlerq emit [vlerq def A:D {1234567.25 2345678.75}]]
+} {data {mdef A:D} {1234567.25 2345678.75}}
+
+test 33 {} {
+    set v [vlerq tag 10000 A]
+    vlerq get [vlerq meta $v]
+} {A I {}}
+    
+test 34 {} {
+    string length [vlerq emit $v]
+} 20035
+
+test 35 {} {
+    vlerq def A {1 {}}
+} {data {mdef A} {1 {}}}
+    
+test 36 {F117, 2006-12-16} {
+    set z [vlerq emit [vlerq def A {1 {}}]]
+    binary scan $z H* w
+    regsub -all {..} [string replace $w 0 3 4?4?] {& }
+} {4? 4? 1a 00 00 00 00 26 31 00 02 80 83 41 3a 53\
+     82 82 88 81 8a 80 80 00 00 00 00 00 00 16 80 00\
+     00 0b 00 00 00 0b }
+    
+test 37 {F117, 2006-12-16} {
+    vlerq load [vlerq emit [vlerq def A {1 {}}]]
+} {data {mdef A} {1 {}}}
+    
+test 38 {} {
+    vlerq def A {{} 1}
+} {data {mdef A} {{} 1}}
+    
+test 39 {} {
+    vlerq load [vlerq emit [vlerq def A {{} 1}]]
+} {data {mdef A} {{} 1}}
+
+unset -nocomplain r v w x y z fd
+    
+::tcltest::cleanupTests

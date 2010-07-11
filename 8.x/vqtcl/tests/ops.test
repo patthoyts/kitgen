@@ -1,0 +1,464 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {load extension} {
+    package require vlerq
+} $version
+
+test 1 {view of empty string} {
+    vlerq viewconv {}
+} {}
+
+test 2 {view with no columns} {
+    vlerq viewconv 5
+} 5
+
+test 3 {view type of empty meta view} {
+    vlerq type [vlerq viewconv {}]
+} view
+
+test 4 {view type of no-column view} {
+    vlerq type [vlerq viewconv 5]
+} view
+
+test 5 {refcount of empty meta view} {
+    vlerq refs [vlerq viewconv {}]
+} 1
+
+test 6 {refcount of no-column view} {
+    vlerq refs [vlerq viewconv 5]
+} 1
+
+test 7 {size of empty view} {
+    vlerq size ""
+} 0
+
+test 8 {size of no-column view} {
+    vlerq size 5
+} 5
+
+test 9 {width of empty view} {
+    vlerq size [vlerq meta ""]
+} 3
+
+test 10 {width of no-column view} {
+    vlerq size [vlerq meta 5]
+} 0
+
+test 11 {meta meta view} {
+    set m [vlerq meta ""]
+} {mdef {name type {subv {}}}}
+
+test 12 {size of meta meta view} {
+    vlerq size $m
+} 3
+
+test 13 {width of meta meta view} {
+    vlerq size [vlerq meta $m]
+} 3
+
+test 14 {meta meta meta view} {
+    vlerq meta $m
+} {mdef {name type {subv {}}}}
+
+test 15 {empty meta view} {
+    set e [vlerq get $m 2 2]
+} {}
+
+test 16 {size of empty meta view} {
+    vlerq size $e
+} 0
+
+test 17 {width of empty meta view} {
+    vlerq size [vlerq meta $e]
+} 3
+
+test 18 {meta empty meta view} {
+    vlerq meta $e
+} {mdef {name type {subv {}}}}
+
+test 19 {contents of meta meta view} {
+    vlerq get $m
+} {name S {} type S {} subv V {}}
+
+test 20 {empty meta view from list} {
+    # this could trigger a different code path, see updateViewStrRep
+    set v [lreplace x 0 0]
+    vlerq viewconv $v
+} {}
+
+test 21 {no-column view from list} {
+    # this could trigger a different code path, see updateViewStrRep
+    set v [list 7]
+    vlerq viewconv $v
+} 7
+
+test 22 {to operator} {
+    vlerq to 12 v
+    vlerq size $v
+} 12
+
+test 23 {to operator result} {
+    vlerq to 12 v
+} 12
+
+test 24 {to result use} {
+    vlerq size @v
+} 12
+
+test 25 {to must set local var} -body {
+    # bt: failed on 2006-12-02
+    unset -nocomplain a
+    proc a {} { vlerq to [vlerq def a {1 2 3 4}] a; set a }
+    a
+} -result {data {mdef a} {1 2 3 4}} -cleanup { rename a "" }
+
+test 26 {data with meta view} {
+    set v [vlerq data [vlerq meta ""] {A B} {S I} {"" ""}]
+} {mdef {A B:I}}
+
+test 27 {mdef operator} {
+    vlerq mdef {A:S B:I}
+} {mdef {A B:I}}
+
+test 28 {mdesc operator} {
+    vlerq mdesc {A,B:I,C[D:L,E:F],F:V}
+} {mdef {A B:I {C {D:L E:F}} {F {}}}}
+
+test 29 {data operator} {
+    set v [vlerq data [vlerq mdef {A:S B:I}] {a b} {1 2}]
+} {data {mdef {A B:I}} {a b} {1 2}}
+
+test 30 {} {
+    set v [vlerq data [vlerq mdef {A B}] {a b c} {d e f}]
+    vlerq colmap $v {}
+} 3
+
+test 31 {} {
+    vlerq colmap $v 1
+} {data {mdef B} {d e f}}
+
+test 32 {} {
+    vlerq colmap $v {1 0}
+} {data {mdef {B A}} {d e f} {a b c}}
+
+test 33 {} {
+    vlerq colmap $v {0 1 0}
+} {data {mdef {A B A}} {a b c} {d e f} {a b c}}
+
+test 34 {} {
+    vlerq colmap $v B
+} {data {mdef B} {d e f}}
+
+test 35 {} {
+    vlerq colmap $v {B A}
+} {data {mdef {B A}} {d e f} {a b c}}
+
+test 36 {} {
+    vlerq colmap $v {A B A}
+} {data {mdef {A B A}} {a b c} {d e f} {a b c}}
+
+test 37 {} {
+    vlerq colmap $v {-1 -2}
+} {data {mdef {B A}} {d e f} {a b c}}
+
+test 38 {} {
+    vlerq repeat [vlerq def A {a b c}] 2
+} {data {mdef A} {a b c a b c}}
+
+test 39 {} {
+    vlerq spread [vlerq def A {a b c}] 2
+} {data {mdef A} {a a b b c c}}
+
+test 40 {} {
+    set v [vlerq data [vlerq mdef {A B}] {a b} {c d}]
+    set w [vlerq data [vlerq mdef {C D}] {1 2} {3 4}]
+    vlerq product $v $w
+} {data {mdef {A B C D}} {a a b b} {c c d d} {1 2 1 2} {3 4 3 4}}
+
+test 41 {} {
+    vlerq clone [vlerq def A {a b c}]
+} {data {mdef A} {}}
+
+test 42 {} {
+    vlerq reverse [vlerq def A {a b c}]
+} {data {mdef A} {c b a}}
+
+test 43 {} {
+    vlerq first [vlerq def A {a b c}] 0
+} {data {mdef A} {}}
+
+test 44 {} {
+    vlerq first [vlerq def A {a b c}] 2
+} {data {mdef A} {a b}}
+
+test 45 {} {
+    vlerq first [vlerq def A {a b c}] 4
+} {data {mdef A} {a b c}}
+
+test 46 {} {
+    vlerq last [vlerq def A {a b c}] 0
+} {data {mdef A} {}}
+
+test 47 {} {
+    vlerq last [vlerq def A {a b c}] 2
+} {data {mdef A} {b c}}
+
+test 48 {} {
+    vlerq last [vlerq def A {a b c}] 4
+} {data {mdef A} {a b c}}
+
+test 49 {} {
+    vlerq slice [vlerq def A {a b c d e f g h i}] 1 2 3
+} {data {mdef A} {b d f}}
+
+test 50 {} {
+    vlerq slice [vlerq def A {a b c d e f g h i}] 7 -2 3
+} {data {mdef A} {h f d}}
+
+test 51 {} {
+    vlerq names ""
+} {name type subv}
+    
+test 52 {} {
+    vlerq names [vlerq meta ""]
+} {name type subv}
+
+test 53 {} {
+    vlerq types ""
+} {S S V}
+    
+test 54 {} {
+    vlerq types [vlerq meta ""]
+} {S S V}
+
+test 55 {} {
+    vlerq take [vlerq def A {a b c}] 2
+} {data {mdef A} {a b}}
+
+test 56 {} {
+    vlerq take [vlerq def A {a b c}] 7
+} {data {mdef A} {a b c a b c a}}
+
+test 57 {} {
+    vlerq take [vlerq def A {a b c}] -2
+} {data {mdef A} {c b}}
+
+test 58 {} {
+    vlerq take [vlerq def A {a b c}] -7
+} {data {mdef A} {c b a c b a c}}
+
+test 59 {} {
+    vlerq namecol ""
+} {data {mdef name} {name type subv}}
+
+test 60 {} {
+    vlerq structure 123
+} {}
+    
+test 61 {} {
+    vlerq structure ""
+} SSV
+    
+test 62 {} {
+    vlerq structdesc 123
+} {}
+    
+test 63 {} {
+    vlerq structdesc ""
+} {name:S,type:S,subv:V}
+    
+test 64 {} {
+    vlerq compat 12 34
+} 1
+    
+test 65 {} {
+    vlerq compat "" ""
+} 1
+    
+test 66 {} {
+    vlerq compat 12 ""
+} 0
+    
+test 67 {} {
+    vlerq compat "" 34
+} 0
+    
+test 68 {} {
+    vlerq compat "" [vlerq meta ""]
+} 1
+
+test 69 {} {
+    vlerq compat [vlerq def A {1 2 3}] [vlerq def B {1 2 3}]
+} 1
+
+test 70 {} {
+    vlerq compat [vlerq def A {1 2 3}] [vlerq def A:I {1 2 3}]
+} 0
+
+test 71 {} {
+    vlerq compat [vlerq def {{A {B C}}} {}] [vlerq def {{D {E F}}} {}]
+} 1
+
+test 72 {} {
+    vlerq compat [vlerq def {{A {B C}}} {}] [vlerq def {{A {B C:I}}} {}]
+} 0
+
+test 73 {} {
+    vlerq def A ""
+} {data {mdef A} {}}
+    
+test 74 {} {
+    vlerq def A {a b c}
+} {data {mdef A} {a b c}}
+    
+test 75 {} {
+    vlerq def {A B} ""
+} {data {mdef {A B}} {} {}}
+    
+test 76 {} {
+    vlerq def {A B} {a b c d}
+} {data {mdef {A B}} {a c} {b d}}
+    
+test 77 {} {
+    vlerq def {A B:I} {a 1 b 02 c -03}
+} {data {mdef {A B:I}} {a b c} {1 2 -3}}
+
+test 78 {} {
+    vlerq tag 0 T
+} {data {mdef T:I} {}}
+
+test 79 {} {
+    vlerq tag 5 T
+} {data {mdef T:I} {0 1 2 3 4}}
+
+test 80 {} {
+    vlerq tag [vlerq def A {a b c}] T
+} {data {mdef {A T:I}} {a b c} {0 1 2}}
+
+test 81 {} {
+    vlerq tag [vlerq def {A B} {a A b B c C}] T
+} {data {mdef {A B T:I}} {a b c} {A B C} {0 1 2}}
+
+test 82 {} {
+    set v [vlerq def {A B C} {1 2 3 4 5 6 7 8 9}]
+    vlerq rename $v {B X}
+} {data {mdef {A X C}} {1 4 7} {2 5 8} {3 6 9}}
+
+test 83 {} {
+    vlerq rename $v {B X -1 Y}
+} {data {mdef {A X Y}} {1 4 7} {2 5 8} {3 6 9}}
+
+test 84 {} {
+    vlerq rename $v {A B B C C A}
+} {data {mdef {B C A}} {1 4 7} {2 5 8} {3 6 9}}
+
+test 85 {omit} {
+    set T [vlerq def {A B C D} {a b c d a b e f b c e f e d c d e d e f a b d e}]
+    vlerq colomit $T {2 3} 
+} {data {mdef {A B}} {a a b e e a} {b b c d d b}}
+
+test 86 {omit reorder} {
+    vlerq colomit $T {3 2} 
+} {data {mdef {A B}} {a a b e e a} {b b c d d b}}
+
+test 87 {omit named} {
+    set T [vlerq def {A B C D} {a b c d a b e f b c e f e d c d e d e f a b d e}]
+    vlerq colomit $T {C D} 
+} {data {mdef {A B}} {a a b e e a} {b b c d d b}}
+
+test 88 {omit named reorder} {
+    vlerq colomit $T {D C} 
+} {data {mdef {A B}} {a a b e e a} {b b c d d b}}
+
+test 89 {} {
+    set v [vlerq def {A B C} {1 2 3 4 5 6}]
+    vlerq colomit $v {C B} 
+} {data {mdef A} {1 4}}
+
+test 90 {} {
+    vlerq colomit $v {A A} 
+} {data {mdef {B C}} {2 5} {3 6}}
+
+test 91 {} {
+    vlerq colomit $v {} 
+} {data {mdef {A B C}} {1 4} {2 5} {3 6}}
+
+test 92 {} {
+    vlerq viewascol [vlerq def {A B:I C} {1 2 3 4 5 6 7 8 9}]
+} {{1 4 7} {2 5 8} {3 6 9}}
+
+test 93 {} {
+    set v [vlerq def {A B} {1 2 3 4 1 2}]
+    vlerq rowcmp $v 0 $v 1
+} -1
+    
+test 94 {} {
+    set v [vlerq def {A B} {1 2 3 4 1 2}]
+    vlerq rowcmp $v 0 $v 2
+} 0
+
+test 95 {} {
+    vlerq def {} {}
+} 0
+
+test 96 {} {
+    set v [vlerq def {A B} {a b c d e f}]
+    vlerq onecol $v A
+} {data {mdef A} {a c e}}
+    
+test 97 {} {
+    set v [vlerq def {A B} {a b c d e f}]
+    vlerq onecol $v -1
+} {data {mdef B} {b d f}}
+
+test 98 {empty string col} {
+    vlerq load [vlerq emit [vlerq def A {"" "" ""}]]
+} {data {mdef A} {{} {} {}}}
+     
+test 99 {16-bit getter} {
+    vlerq load [vlerq emit [vlerq def A:I {123 456 789}]]
+} {data {mdef A:I} {123 456 789}}
+
+test 100 {} {
+    vlerq pair [vlerq def A {a b c}] [vlerq def B {1 2 3}]
+} {data {mdef {A B}} {a b c} {1 2 3}}
+
+test 101 {} {
+    vlerq pair [vlerq def A {a b c}] 2
+} {data {mdef A} {a b}}
+
+test 102 {} {
+    vlerq pair [vlerq def A {a b c}] 3
+} {data {mdef A} {a b c}}
+
+test 103 {} {
+    vlerq pair [vlerq def A {a b c}] 4
+} {data {mdef A} {a b c}}
+
+test 104 {} {
+    vlerq pair 2 [vlerq def A {a b c}]
+} {data {mdef A} {a b}}
+
+test 105 {} {
+    vlerq pair 3 [vlerq def A {a b c}]
+} {data {mdef A} {a b c}}
+
+test 106 {} {
+    vlerq pair 4 [vlerq def A {a b c}]
+} {data {mdef A} {a b c}}
+
+test 107 {} {
+    # bt: crashed on 2007-02-10, see fff/139
+    vlerq pair [vlerq def A {a b c}] [vlerq def B {1 2}]
+} {data {mdef {A B}} {a b} {1 2}}
+
+test 108 {} {
+    vlerq pair [vlerq def A {a b}] [vlerq def B {1 2 3}]
+} {data {mdef {A B}} {a b} {1 2}}
+
+unset -nocomplain T e v w m
+     
+::tcltest::cleanupTests

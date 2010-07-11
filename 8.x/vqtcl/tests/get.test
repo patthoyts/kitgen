@@ -1,0 +1,72 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {load extension} {
+    package require vlerq
+} $version
+
+test 1 {} {
+    set v [vlerq data [vlerq mdef {A B}] {a b c} {d e f}]
+    vlerq get $v
+} {a d b e c f}
+    
+test 2 {}  { vlerq get 5 #         } 5 
+test 3 {}  { vlerq get 5 *         } {{} {} {} {} {}} 
+test 4 {}  { vlerq get 5 * *       } {} 
+test 5 {}  { vlerq get 5 * #       } {0 1 2 3 4} 
+
+test 6 {}  { vlerq get 5 @ #       } 0 
+test 7 {}  { vlerq get 5 @ * 0     } {} 
+test 8 {}  { vlerq get 5 @ *       } {} 
+test 9 {}  { vlerq get 5 @ * *     } {} 
+test 10 {} { vlerq get 5 @ * #     } {} 
+                                    
+test 11 {} { vlerq get 5 @ @ #     } 3
+test 12 {} { vlerq get 5 @ @ * 0   } {name type subv} 
+test 13 {} { vlerq get 5 @ @ * 1   } {S S V} 
+test 14 {} { vlerq get 5 @ @ * 2   } {{} {} {}} 
+test 15 {} { vlerq get 5 @ @ * -1  } {{} {} {}} 
+test 16 {} { vlerq get 5 @ @ * -2  } {S S V} 
+test 17 {} { vlerq get 5 @ @ * -3  } {name type subv} 
+test 18 {} { vlerq get 5 @ @ *     } {{name S {}} {type S {}} {subv V {}}} 
+test 19 {} { vlerq get 5 @ @ * *   } {name S {} type S {} subv V {}} 
+test 20 {} { vlerq get 5 @ @ * #   } {0 1 2} 
+
+test 21 {} { vlerq get "" #        } 0
+test 22 {} { vlerq get "" * 0      } {} 
+test 23 {} { vlerq get "" *        } {} 
+test 24 {} { vlerq get "" * *      } {} 
+test 25 {} { vlerq get "" * #      } {} 
+    
+test 26 {} { vlerq get "" @ #      } 3
+test 27 {} { vlerq get "" @ * 0    } {name type subv} 
+test 28 {} { vlerq get "" @ * 1    } {S S V} 
+test 29 {} { vlerq get "" @ * 2    } {{} {} {}} 
+test 30 {} { vlerq get "" @ * -1   } {{} {} {}} 
+test 31 {} { vlerq get "" @ * -2   } {S S V} 
+test 32 {} { vlerq get "" @ * -3   } {name type subv} 
+test 33 {} { vlerq get "" @ *      } {{name S {}} {type S {}} {subv V {}}} 
+test 34 {} { vlerq get "" @ * *    } {name S {} type S {} subv V {}} 
+test 35 {} { vlerq get "" @ * #    } {0 1 2} 
+
+test 36 {} { vlerq get "" @ * name } {name type subv} 
+test 37 {} { vlerq get "" @ * type } {S S V} 
+test 38 {} { vlerq get "" @ * subv } {{} {} {}} 
+    
+test 39 {} { vlerq get "" @ 0      } {name name type S subv {}} 
+test 40 {} { vlerq get "" @ 1      } {name type type S subv {}} 
+test 41 {} { vlerq get "" @ 2      } {name subv type V subv {}} 
+    
+test 42 {} { vlerq get "" @ # * #  } {0 1 2} 
+
+test 43 {} {
+    vlerq get [vlerq def A {a b c}] * #
+} {0 1 2}
+    
+test 43 {} {
+    vlerq get [vlerq def A {a b c}] -2 #
+} 1
+    
+::tcltest::cleanupTests

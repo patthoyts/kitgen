@@ -1,0 +1,43 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {} {
+    package require vlerq
+} $version
+
+test 1 {structure of sample mkblk.db file} {
+    set bdb [vlerq open data/mkblk.db]
+    vlerq structure $bdb
+} ((II))
+
+test 2 {blocked view has 3 blocks} {
+    vlerq get $bdb 0 bv #
+} 4
+
+test 3 {blocked view structure and size} {
+    set v [vlerq blocked [vlerq get $bdb 0 bv]]
+    list [vlerq names $v] [vlerq structure $v] [vlerq size $v]
+} {{k1 k2} II 2500}
+
+test 4 {block sizes} {
+    vlerq counts [vlerq get $bdb 0 bv] _B
+} {999 999 500 2}
+
+test 5 {contents of last block} {
+    vlerq get $bdb 0 bv -1 _B *
+} {{999 -999} {1999 -1999}}
+
+test 6 {blocked view access} {
+    foreach x {0 1 998 999 1000 1998 1999 2000 2498 2499} {
+      lappend k1 [vlerq get $v $x k1]
+      lappend k2 [vlerq get $v $x k2]
+    }
+    list $k1 $k2
+} {{0 1 998 999 1000 1998 1999 2000 2498 2499}\
+     {0 -1 -998 -999 -1000 -1998 -1999 -2000 -2498 -2499}}
+
+unset -nocomplain v x k1 k2
+
+::tcltest::cleanupTests

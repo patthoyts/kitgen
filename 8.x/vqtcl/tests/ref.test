@@ -1,0 +1,151 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {load extension} {
+    package require vlerq
+} $version
+
+test 1 {ref command} {
+    set v ""
+    list [vlerq size @v] [vlerq width @v]
+} {0 3}
+
+test 2 {ref changed value} {
+    set v [vlerq meta ""]
+    list [vlerq size @v] [vlerq width @v]
+} {3 3}
+
+unset v
+
+test 3 {} {
+    proc foo {args} {
+      puts [list got: $args]
+      lindex $args 2
+    }
+    set v [vlerq def A {a b c}]
+    set t {ref v foo bar}
+    list [vlerq size $t] [vlerq size [vlerq meta $t]]
+} {3 1}
+
+test 4 {} -constraints x -body {
+    vlerq set $t 1 A X
+} -result {data {mdef A} {a X c}} \
+    -output "got: bar {data {mdef A} {a b c}} set 1 A X\n"
+
+test 5 {} {
+    set v [vlerq def A {a b c}]
+    vlerq load [vlerq emit @v]
+} {data {mdef A} {a b c}}
+
+test 6 {} {
+    vlerq set @v 1 A xyz
+} {data {mdef A} {a xyz c}}
+
+test 7 {} {
+    vlerq viewconv $v
+} {data {mdef A} {a b c}}
+
+test 8 {} x {
+    vlerq viewconv @v
+} {data {mdef A} {a xyz c}}
+
+test 9 {} x {
+    vlerq set $v 0 A abc
+} {data {mdef A} {abc xyz c}}
+
+test 10 {} x {
+    vlerq set @v 2 A def
+} {data {mdef A} {abc xyz def}}
+
+test 11 {} {
+    vlerq viewconv $v
+} {data {mdef A} {a b c}}
+
+test 12 {} x {
+    vlerq viewconv @v
+} {data {mdef A} {a xyz def}}
+
+test 13 {} {
+    set v [vlerq group [vlerq def {A B} {a 1 a 2 a 3}] A G]
+    set v [vlerq load [vlerq emit $v]]
+    vlerq load [vlerq emit @v]
+} {data {mdef {A {G B}}} a {{data {mdef B} {1 2 3}}}}
+
+test 14 {} {
+    vlerq get @v 0 G
+} {data {mdef B} {1 2 3}}
+
+test 15 {} {
+    vlerq set @v 0 A b
+} {data {mdef {A {G B}}} b {{data {mdef B} {1 2 3}}}}
+
+test 16 {} {
+    vlerq set {get @v 0 G} 1 B xyz
+} {data {mdef B} {1 xyz 3}}
+
+test 17 {if this works then subviews are mutable} x {
+    set v
+} {data {mdef {A {G B}}} b {{data {mdef B} {1 xyz 3}}}}
+
+#unset v
+#vlerq debug 3
+
+test 18 {} {
+    set v [vlerq def A {5 3 2 1 4}]
+    vlerq sort @v
+} {data {mdef A} {1 2 3 4 5}}
+
+test 19 {} {
+    vlerq set $v 2 A 6
+    vlerq sort @v
+} {data {mdef A} {1 2 3 4 5}}
+
+test 20 {} {
+    set v [vlerq set $v 3 A 7]
+    vlerq sort @v
+} {data {mdef A} {2 3 4 5 7}}
+
+test 21 {} {
+    vlerq set @v 2 A 8
+    set v
+} {data {mdef A} {5 3 8 7 4}}
+
+test 22 {} {
+    vlerq sort @v
+} {data {mdef A} {3 4 5 7 8}}
+
+test 23 {} {
+    set w {sort @v}
+    vlerq viewconv $w
+} {data {mdef A} {3 4 5 7 8}}
+
+test 24 {} {
+    vlerq set @v 2 A 0
+} {data {mdef A} {5 3 0 7 4}}
+
+test 25 {} {
+    vlerq deps $v
+} -
+
+test 26 {} {
+    set w [vlerq sort $v]
+    vlerq size $w
+} 5
+
+test 27 {} x {
+    vlerq deps $v
+} {- {sort A 5}}
+
+test 28 {} x {
+    vlerq deps @v
+} {}
+
+test 29 {} x {
+    vlerq viewconv $w
+} {data {mdef A} {0 3 4 5 7}}
+
+unset -nocomplain t v w
+
+::tcltest::cleanupTests

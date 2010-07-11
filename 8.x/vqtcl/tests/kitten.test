@@ -1,0 +1,45 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {load extension} {
+    package require vlerq
+} $version
+
+test 1 {load mkclvfs package} vfs {
+    if {[file exists src_tcl/mkclvfs.tcl]} {
+      source src_tcl/mkclvfs.tcl
+    } else {
+      source library/mkclvfs.tcl
+    }
+    package require vfs::mkcl
+} 1.5
+
+test 2 {} -constraints {vfs kitten} -body {
+    set fs [vfs::mkcl::Mount [temporaryDirectory]/kitten.kit /kitten]
+} -match glob -result mkclvfs*
+
+test 3 {} {vfs kitten} {
+    lsort -dict [glob -directory /kitten -tails -types f *]
+} {ChangeLog main.tcl}
+
+test 4 {} {vfs kitten} {
+    lsort -dict [glob -directory /kitten -tails -types d *]
+} {doc lib}
+
+test 5 {} -constraints {vfs kitten} -body {
+    lsort -dict [glob -directory /kitten/lib -tails -types f *]
+} -match glob -result {httpdist.tcl * md5.tcl}
+
+test 6 {} -constraints {vfs kitten} -body {
+    lsort -dict [glob -directory /kitten/lib -tails -types d *]
+} -match glob -result {ascenc-0.11 autoproxy * tls-1.4 wcb2.8 wikit yeti-0.4}
+
+test 7 {} {vfs kitten} {
+    vfs::unmount /kitten
+} {}
+
+unset -nocomplain fs
+
+::tcltest::cleanupTests

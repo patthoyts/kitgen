@@ -1,0 +1,208 @@
+#!/usr/bin/env tclkit
+# %renumber<^\s*test >%
+
+source [file join [file dir [info script]] initests.tcl]
+
+test 0 {load extension} {
+    package require vlerq
+} $version
+
+test 1 {vlerq without command name} -body {
+    vlerq
+} -returnCodes 1 -result {wrong # args: should be "vlerq command ..."}
+
+test 2 {vlerq with a bad command name} -body {
+    vlerq ?
+} -returnCodes 1 -result {bad command "?": must be open, save, append, bitruns, blocked, clone, coerce, colconv, colmap, colomit, compare, compat, concat, counts, countscol, countview, data, debug, def, delete, deps, emit, emitmods, except, exceptmap, first, get, getcol, getinfo, group, grouped, hashcol, hashfind, hashview, ijoin, insert, intersect, iota, isectmap, join, last, load, loadmods, loop, max, mdef, mdesc, meta, min, mutinfo, namecol, names, omitmap, onecol, pair, product, ref, refs, remap, remapsub, rename, repeat, replace, resizecol, reverse, rowcmp, roweq, rowhash, set, size, slice, sort, sortmap, spread, step, strlookup, structdesc, structure, sum, tag, take, to, type, types, ungroup, union, unionmap, unique, uniquemap, view, viewascol, viewconv, width, or write}
+
+test 3 {colconv without list} -body {
+    vlerq colconv
+} -returnCodes 1 -result {wrong # args: should be "vlerq colconv list"}
+
+test 4 {colconv with a non-list} -body {
+    vlerq colconv "\{"
+} -returnCodes 1 -result {unmatched open brace in list}
+
+test 5 {viewconv without value} -body {
+    vlerq viewconv
+} -returnCodes 1 -result {wrong # args: should be "vlerq viewconv view"}
+
+test 6 {type without value} -body {
+    vlerq type
+} -returnCodes 1 -result {wrong # args: should be "vlerq type any"}
+
+test 7 {refs without value} -body {
+    vlerq refs
+} -returnCodes 1 -result {wrong # args: should be "vlerq refs any"}
+
+test 8 {meta without view} -body {
+    vlerq meta
+} -returnCodes 1 -result {wrong # args: should be "vlerq meta view"}
+
+test 9 {size without view} -body {
+    vlerq size
+} -returnCodes 1 -result {wrong # args: should be "vlerq size view"}
+
+test 10 {negative size} {
+    catch { vlerq size -123 } ;# TODO: return proper error message
+} 1
+
+test 11 {bad variable reference} -body {
+    vlerq size @?
+} -returnCodes 1 -result {can't read "?": no such variable}
+
+test 12 {ref without varname} -body {
+    vlerq ref
+} -returnCodes 1 -result {wrong # args: should be "vlerq ref any ..."}
+
+test 13 {to with too few args} -body {
+    vlerq to ?
+} -returnCodes 1 -result {wrong # args: should be "vlerq to any any"}
+
+test 14 {non-existent view operation} -body {
+    vlerq viewconv {foo bar}
+} -returnCodes 1 -match glob -result {bad command "foo": must be open, *}
+
+test 15 {locate the load path of the vlerq extension} -body {
+    foreach x [info loaded] {
+      foreach {path name} $x break
+      if {$name eq "Vlerq"} break
+    }
+    set path
+    # match either a reasonable real path or the empty string if statically linked
+} -match regexp -result {^(.*/(?:(?:libvlerq)|(?:vqtcl)).*\..*|)$}
+
+test 16 {open is not allowed in safe interpreters} -body {
+    set i [interp create -safe]
+    load $path Vlerq $i
+    catch { $i eval {vlerq open} } msg
+    interp delete $i
+    set msg
+} -match glob -result {bad command "open": must be append, *}
+    
+test 17 {open should be supported in normal interpreters} {
+    catch { vlerq open } msg
+    set msg
+} {wrong # args: should be "vlerq open string"}
+
+test 18 {open file which does not exist} -body {
+    vlerq open blah-blah-blah
+} -returnCodes 1 -result {cannot open file: blah-blah-blah}
+
+test 19 {define zero-width view with data} -body {
+    vlerq def {} {1 2 3}
+} -returnCodes 1 -result {cannot insert in zero-width view}
+    
+test 20 {define with incorrect number of items} -body {
+    vlerq def {A B} {1 2 3}
+} -returnCodes 1 -result {item count not a multiple of column width}
+
+test 21 {view cmd without args} -body {
+    vlerq view
+} -returnCodes 1 -result {wrong # args: should be "view arg ?op ...? ?| ...?"}
+
+test 22 {} -body {
+    vlerq view 3 | ?
+} -returnCodes 1 -match glob -result {bad command "?": must be open, *}
+
+test 23 {untyped sum} -body {
+    set x [vlerq sum [vlerq def A {1 2 3 4}] A]
+} -returnCodes 1 -result {} ;# TODO: sum should return an error message
+
+test 24 {} -body {
+    vlerq def A:I [list ""]
+} -returnCodes 1 -result {expected integer but got ""}
+    
+test 25 {} -body {
+    vlerq def A:I 1.2
+} -returnCodes 1 -result {expected integer but got "1.2"}
+    
+test 26 {} -body {
+    vlerq def A:L 2.3
+} -returnCodes 1 -result {expected integer but got "2.3"}
+    
+test 27 {} -body {
+    vlerq def A:F a
+} -returnCodes 1 -result {expected floating-point number but got "a"}
+    
+test 28 {} -body {
+    vlerq def A:D b
+} -returnCodes 1 -result {expected floating-point number but got "b"}
+
+test 29 {} -body {
+    vlerq def A { {}? }
+} -returnCodes 1 -result \
+    {list element in braces followed by "?" instead of space}
+
+test 30 {} -body {
+    vlerq data [vlerq mdef A] { {}? }
+} -returnCodes 1 -result \
+    {list element in braces followed by "?" instead of space}
+
+test 31 {F118, 2006-12-16} -body {
+    vlerq get [vlerq def a {1 2 3 4}] 4 a
+} -returnCodes 1 -result {row index out of range}
+    
+test 32 {} -body {
+    vlerq get [vlerq def a {1 2 3 4}] -5 a
+} -returnCodes 1 -result {row index out of range}
+    
+test 33 {} -body {
+    vlerq get [vlerq def a {1 2 3 4}] 0 1
+} -returnCodes 1 -result {column index out of range}
+    
+test 34 {} -body {
+    vlerq get [vlerq def a {1 2 3 4}] 0 -2
+} -returnCodes 1 -result {column index out of range}
+    
+test 35 {} -body {
+    vlerq get [vlerq def a {1 2 3 4}] -5 -2
+} -returnCodes 1 -result {row index out of range}
+
+test 36 {} -body {
+    vlerq mdesc {a]b[,}
+} -returnCodes 1 -result {invalid view}
+
+test 37 {} -body {
+    vlerq mdef {{a b c}}
+} -returnCodes 1 -result {invalid view}
+
+test 38 {} -body {
+    vlerq rename
+} -returnCodes 1 -result {wrong # args: should be "vlerq rename view any"}
+
+test 39 {} -body {
+    vlerq getcol
+} -returnCodes 1 -result {wrong # args: should be "vlerq getcol view col"}
+
+test 40 {} -body {
+    vlerq group
+} -returnCodes 1 \
+    -result {wrong # args: should be "vlerq group view col* string"}
+
+test 41 {} -body {
+    # F142, 2007-03-02
+    vlerq def a:0 1
+} -returnCodes 1 -result {invalid view}
+
+test 42 {F150} -body {
+    vlerq colmap [vlerq def A {}] B
+} -returnCodes 1 -result {colmap: invalid column name}
+
+test 43 {F151 concat} -body {
+    set v [vlerq def {A B} {}]
+    set w [vlerq def A {}]
+    vlerq concat $v $w
+} -returnCodes 1 -result {invalid view}
+      
+test 44 {F151 union} -body {
+    vlerq union $v $w
+} -returnCodes 1 -result {invalid view}
+      
+test 45 {incompatible intersect} -body {
+    vlerq intersect $v $w
+} -returnCodes 1 -result {invalid view}
+      
+unset -nocomplain v w x i
+
+::tcltest::cleanupTests
