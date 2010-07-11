@@ -97,7 +97,7 @@ build/vqtcl: build/tcl
 
 build/zlib: build/tcl
 	cp -R ../../8.x/zlib/. $@
-	cd $@ && sh configure && \
+	cd $@ && CC=$(CC) sh configure && \
 	$(MAKE) install prefix=..
 
 base: build/tcl build/tk
