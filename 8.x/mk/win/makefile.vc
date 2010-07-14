@@ -1,0 +1,340 @@
+# makefile.vc --                                               -*- Makefile -*-
+#
+#  This is an NMAKE makefile that makes use of build-time testing of the
+#  available compiler to support MSVC 6, 7 and 8 and also the AMD64 and IA64
+#  targets.
+#
+#  The buildtime testing is provided by nmakehlp and rules.vc.
+#
+#  Derived from the Tcl msvc build-system files.
+#
+#
+
+!if !exist("makefile.vc")
+MSG = ^
+You must run this makefile only from the directory it is in.^
+Please `cd` to its location first.
+!error $(MSG)
+!endif
+
+ROOT            = ..
+#BUILD_ROOT	= $(ROOT)\builds
+SRCDIR		= $(ROOT)\src
+INCLUDEDIR	= $(ROOT)\include
+TESTDIR		= $(ROOT)\tests
+DEMOSDIR	= $(ROOT)\demos
+EXAMPLESDIR	= $(ROOT)\examples
+WINDIR		= $(ROOT)\win
+
+# HACK FOR WIRE - we need a static build and I don't fancy messing with the build script.
+!ifndef OPTS
+OPTS=static,msvcrt
+!endif
+
+!include "rules.vc"
+
+
+OBJS = \
+	$(TMP_DIR)\column.obj \
+	$(TMP_DIR)\custom.obj \
+	$(TMP_DIR)\derived.obj \
+	$(TMP_DIR)\field.obj \
+	$(TMP_DIR)\fileio.obj \
+	$(TMP_DIR)\format.obj \
+	$(TMP_DIR)\handler.obj \
+	$(TMP_DIR)\persist.obj \
+	$(TMP_DIR)\remap.obj \
+	$(TMP_DIR)\std.obj \
+	$(TMP_DIR)\store.obj \
+	$(TMP_DIR)\string.obj \
+	$(TMP_DIR)\table.obj \
+	$(TMP_DIR)\univ.obj \
+	$(TMP_DIR)\view.obj \
+	$(TMP_DIR)\viewx.obj
+
+HDRS = \
+	$(SRCDIR)\column.h \
+	$(SRCDIR)\column.inl \
+	$(SRCDIR)\custom.h \
+	$(SRCDIR)\derived.h \
+	$(SRCDIR)\field.h \
+	$(SRCDIR)\field.inl \
+	$(SRCDIR)\format.h \
+	$(SRCDIR)\handler.h \
+	$(SRCDIR)\handler.inl \
+	$(SRCDIR)\header.h \
+	$(SRCDIR)\mfc.h \
+	$(SRCDIR)\msvc.h \
+	$(SRCDIR)\persist.h \
+	$(SRCDIR)\remap.h \
+	$(SRCDIR)\std.h \
+	$(SRCDIR)\store.h \
+	$(SRCDIR)\store.inl \
+	$(SRCDIR)\univ.h \
+	$(SRCDIR)\univ.inl \
+	$(SRCDIR)\win.h \
+	$(INCLUDEDIR)\mk4.h \
+	$(INCLUDEDIR)\mk4.inl \
+	$(INCLUDEDIR)\mk4io.h \
+	$(INCLUDEDIR)\mk4str.h \
+	$(INCLUDEDIR)\mk4str.inl
+
+TESTOBJS = \
+	$(TMP_DIR)\regress.obj \
+	$(TMP_DIR)\tbasic1.obj \
+	$(TMP_DIR)\tbasic2.obj \
+	$(TMP_DIR)\tcusto1.obj \
+	$(TMP_DIR)\tcusto2.obj \
+	$(TMP_DIR)\tdiffer.obj \
+	$(TMP_DIR)\textend.obj \
+	$(TMP_DIR)\tformat.obj \
+	$(TMP_DIR)\tlimits.obj \
+	$(TMP_DIR)\tmapped.obj \
+	$(TMP_DIR)\tnotify.obj \
+	$(TMP_DIR)\tresize.obj \
+	$(TMP_DIR)\tstore1.obj \
+	$(TMP_DIR)\tstore2.obj \
+	$(TMP_DIR)\tstore3.obj \
+	$(TMP_DIR)\tstore4.obj \
+	$(TMP_DIR)\tstore5.obj
+
+#-------------------------------------------------------------------------
+# Setup compiler options
+#-------------------------------------------------------------------------
+
+!if !$(DEBUG)
+!if $(OPTIMIZING)
+cdebug	= -DNDEBUG $(OPTIMIZATIONS)
+!else
+cdebug	= -DNDEBUG
+!endif
+!else if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
+### Warnings are too many, can't support warnings into errors.
+cdebug	= -D_DEBUG -Zi -WX $(DEBUGFLAGS)
+!else
+cdebug	= -D_DEBUG -Zi -WX $(DEBUGFLAGS)
+!endif
+
+### Declarations common to all compiler options
+cwarn = $(WARNINGS) -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
+cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\
+
+# For C++ we need exception handling
+!if [nmakehlp -c -EHsc]
+GX_FLAG = -EHsc
+!elseif [nmakehlp -c GX]
+GX_FLAG = -GX
+!endif
+
+!if $(MSVCRT)
+!if $(DEBUG) && !$(UNCHECKED)
+crt = -MDd
+!else
+crt = -MD
+!endif
+!else
+!if $(DEBUG) && !$(UNCHECKED)
+crt = -MTd
+!else
+crt = -MT
+!endif
+!endif
+
+!if $(STATIC_BUILD)
+LIBDEFS = -DWIN32 -D_WINDOWS -D_MBCS -D_LIB -Dq4_INLINE
+!else
+LIBDEFS = -DWIN32 -D_WINDOWS -D_MBCS -D_USRDLL -DMKDLL_EXPORTS
+!endif
+PROGDEFS= $(GX_FLAG) -DWIN32 -D_WINDOWS -D_MBCS -Dq4_INLINE
+
+
+INCLUDES = -I"$(INCLUDEDIR)" -I"$(SRCDIR)" -I"$(WINDIR)"
+CFLAGS   = $(cflags) $(cdebug) $(crt) $(INCLUDES)
+
+#---------------------------------------------------------------------
+# Link flags
+#---------------------------------------------------------------------
+
+!if $(DEBUG)
+ldebug	= -debug:full -debugtype:cv
+!if $(MSVCRT)
+ldebug = $(ldebug) -nodefaultlib:msvcrt
+!endif
+!else
+ldebug	= -release -opt:ref -opt:icf,3
+!endif
+
+### Declarations common to all linker options
+lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
+
+!if $(PROFILE)
+lflags	= $(lflags) -profile
+!endif
+
+!if $(ALIGN98_HACK) && !$(STATIC_BUILD)
+### Align sections for PE size savings.
+lflags	= $(lflags) -opt:nowin98
+!else if !$(ALIGN98_HACK) && $(STATIC_BUILD)
+### Align sections for speed in loading by choosing the virtual page size.
+lflags	= $(lflags) -align:4096
+!endif
+
+!if $(LOIMPACT)
+lflags	= $(lflags) -ws:aggressive
+!endif
+
+dlllflags = $(lflags) -dll
+conlflags = $(lflags) -subsystem:console
+guilflags = $(lflags) -subsystem:windows
+
+# Avoid 'unresolved external symbol __security_cookie' errors.
+# c.f. http://support.microsoft.com/?id=894573
+!if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
+baselibs   = $(baselibs) bufferoverflowU.lib
+!endif
+
+
+#---------------------------------------------------------------------
+# Project specific targets (EDIT)
+#---------------------------------------------------------------------
+
+# mklib: mkvc60s.lib, mkvc60s_d.lib
+# mkdll: mkvc60.dll, mkvc60_d.dll
+
+MKLIB    = $(OUT_DIR)\mk4vc$(VCVER)0$(SUFX).$(EXT)
+MKIMPLIB = $(OUT_DIR)\mk4vc$(VCVER)0$(SUFX).lib
+MKTEST   = $(OUT_DIR)\mktest.exe
+MKBUG	 = $(OUT_DIR)\mkbug.exe
+MKDEMO	 = $(OUT_DIR)\mkdemo.exe
+MKDUMP	 = $(OUT_DIR)\mkdump.exe
+MKHASH   = $(OUT_DIR)\mkhash.exe
+
+all:	setup mklib mkbug mktest mkdump mkhash mkdemo
+mklib:	setup $(MKLIB)
+mktest: setup $(MKLIB) $(MKTEST)
+mkbug:  setup $(MKLIB) $(MKBUG)
+mkdump: setup $(MKLIB) $(MKDUMP)
+mkhash: setup $(MKLIB) $(MKHASH)
+mkdemo: setup $(MKLIB) $(MKDEMO)
+
+setup:
+	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
+	@if not exist $(TMP_DIR)\nul mkdir $(TMP_DIR)
+
+test: $(MKTEST)
+	if not exist $(OUT_DIR)\tests\nul xcopy /s /e /i /y $(TESTDIR)\ok $(OUT_DIR)\tests
+	pushd $(OUT_DIR) & .\mktest.exe
+
+!if $(STATIC_BUILD)
+$(MKLIB): $(OBJS)
+	$(lib32) -nologo -out:$@ @<<
+$**
+<<
+!else
+$(MKLIB): $(OBJS)
+	$(link32) $(dlllflags) -out:$@ $(baselibs) @<<
+$**
+<<
+	$(_VC_MANIFEST_EMBED_DLL)
+	-@del $*.exp
+!endif
+	$(CPY) $@ ..\builds\
+
+$(MKTEST): $(TESTOBJS)
+	$(link32) $(conlflags) -out:$@ $(MKIMPLIB) @<<
+$**
+<<
+	$(_VC_MANIFEST_EMBED_EXE)
+	$(CPY) $@ ..\builds\
+
+$(MKBUG): $(TMP_DIR)\mkbug.obj
+	$(link32) $(conlflags) -out:$@ $(MKIMPLIB) @<<
+$**
+<<
+	$(_VC_MANIFEST_EMBED_EXE)
+	$(CPY) $@ ..\builds\
+
+$(MKDEMO): $(TMP_DIR)\demo.obj
+	$(link32) $(conlflags) -out:$@ $(MKIMPLIB) @<<
+$**
+<<
+	$(_VC_MANIFEST_EMBED_EXE)
+	$(CPY) $@ ..\builds\
+
+$(MKDUMP): $(TMP_DIR)\dump.obj
+	$(link32) $(conlflags) -out:$@ $(MKIMPLIB) @<<
+$**
+<<
+	$(_VC_MANIFEST_EMBED_EXE)
+	$(CPY) $@ ..\builds\
+
+$(MKHASH): $(TMP_DIR)\mkhash.obj
+	$(link32) $(conlflags) -out:$@ $(MKIMPLIB) @<<
+$**
+<<
+	$(_VC_MANIFEST_EMBED_EXE)
+	$(CPY) $@ ..\builds\
+
+#---------------------------------------------------------------------
+# Implicit rules
+#---------------------------------------------------------------------
+
+{$(SRCDIR)}.cpp{$(TMP_DIR)}.obj::
+    $(cc32) $(CFLAGS) $(LIBDEFS) -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+{$(TESTDIR)}.cpp{$(TMP_DIR)}.obj::
+    $(cc32) $(CFLAGS) $(PROGDEFS) -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+{$(DEMOSDIR)}.cpp{$(TMP_DIR)}.obj::
+    $(cc32) $(CFLAGS) $(PROGDEFS) -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+{$(EXAMPLESDIR)}.cpp{$(TMP_DIR)}.obj::
+    $(cc32) $(CFLAGS) $(PROGDEFS) -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+{$(WINDIR)}.rc{$(TMP_DIR)}.res:
+	$(rc32) -fo $@ -r -i "$(GENERICDIR)" -D__WIN32__ \
+		-DCOMMAVERSION=$(DOTVERSION:.=,),0,0 \
+		-DDOTVERSION=\"$(DOTVERSION)\" \
+		-DVERSION=\"$(VERSION)$(SUFX)\" \
+!if $(DEBUG)
+	-d DEBUG \
+!endif
+!if $(STATIC_BUILD)
+	-d STATIC_BUILD \
+!endif
+	$<
+
+.SUFFIXES:
+.SUFFIXES:.cpp .rc
+
+#-------------------------------------------------------------------------
+# Explicit dependency rules
+#
+#-------------------------------------------------------------------------
+
+
+#---------------------------------------------------------------------
+# Clean up
+#---------------------------------------------------------------------
+
+clean:
+	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
+	@if exist $(WINDIR)\versions.vc del $(WINDIR)\versions.vc
+	@if exist $(WINDIR)\vercl.i del $(WINDIR)\vercl.i
+	@if exist $(WINDIR)\vercl.x del $(WINDIR)\vercl.x
+	@if exist $(WINDIR)\_junk.pch del $(WINDIR)\_junk.pch
+
+realclean: clean
+	@if exist $(OUT_DIR)\nul $(RMDIR) $(OUT_DIR)
+
+distclean: realclean
+	@if exist $(WINDIR)\nmakehlp.exe del $(WINDIR)\nmakehlp.exe
+	@if exist $(WINDIR)\nmakehlp.obj del $(WINDIR)\nmakehlp.obj
