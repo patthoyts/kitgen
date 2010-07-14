@@ -140,7 +140,7 @@ the build instructions.
 MSG = ^
 You must run this makefile only from the directory it is in.^
 Please `cd` to its location first.
-!error $(MSG) 
+!error $(MSG)
 !endif
 
 #-------------------------------------------------------------------------
@@ -158,7 +158,7 @@ Please `cd` to its location first.
 #
 #-------------------------------------------------------------------------
 
-PROJECT	= itcl
+PROJECT = itcl
 
 # Uncomment the following line if this is a Tk extension.
 #PROJECT_REQUIRES_TK=1
@@ -176,7 +176,7 @@ PROJECT	= itcl
 
 DOTVERSION      = $(ITCL_DOTVERSION)
 VERSION         = $(DOTVERSION:.=)
-STUBPREFIX	= $(PROJECT)stub
+STUBPREFIX      = $(PROJECT)stub
 
 DLLOBJS = \
 	$(TMP_DIR)\itcl_bicmds.obj \
@@ -231,7 +231,7 @@ LIBDIR          = $(ROOT)\library
 DOCDIR		= $(ROOT)\doc
 TOOLSDIR	= $(ROOT)\tools
 COMPATDIR	= $(ROOT)\compat
-RCDIR		= $(ROOT)\win\rc
+RCDIR           = $(ROOT)\win\rc
 
 #---------------------------------------------------------------------
 # Compile flags
@@ -397,7 +397,7 @@ genstubs:
 	@echo Need the source distribution to regenerate the Stubs table.
 !else
 	$(TCLSH) $(TOOLSDIR)\genStubs.tcl $(GENERICDIR) \
-        	$(GENERICDIR)\$(PROJECT).decls $(GENERICDIR)\$(PROJECT)Int.decls
+	  $(GENERICDIR)\$(PROJECT).decls $(GENERICDIR)\$(PROJECT)Int.decls
 !endif
 
 #---------------------------------------------------------------------
@@ -409,8 +409,8 @@ depend:
 	@echo Build tclsh first!
 !else
 	$(TCLSH) $(TCLTOOLSDIR)\mkdepend.tcl -vc32 -out:"$(OUT_DIR)\depend.mk" \
-		-passthru:"-DBUILD_itcl $(ITCL_INCLUDES) $(TCL_INCLUDES)" $(GENERICDIR),$$(GENERICDIR) \
-		$(WINDIR),$$(WINDIR) @<<
+	  -passthru:"-DBUILD_itcl $(ITCL_INCLUDES) $(TCL_INCLUDES)" $(GENERICDIR),$$(GENERICDIR) \
+	  $(WINDIR),$$(WINDIR) @<<
 $(ITCLOBJS)
 <<
 !endif

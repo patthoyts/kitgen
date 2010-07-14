@@ -59,7 +59,7 @@ typedef struct {
 
 pipeinfo Out = {INVALID_HANDLE_VALUE, '\0'};
 pipeinfo Err = {INVALID_HANDLE_VALUE, '\0'};
-
+
 /*
  * exitcodes: 0 == no, 1 == yes, 2 == error
  */
@@ -114,8 +114,8 @@ main(
 	    if (argc == 2) {
 		chars = snprintf(msg, sizeof(msg) - 1,
 			"usage: %s -f <string> <substring>\n"
-		    "Find a substring within another\n"
-		    "exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
+			"Find a substring within another\n"
+			"exitcodes: 0 == no, 1 == yes, 2 == error\n", argv[0]);
 		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
 			&dwWritten, NULL);
 		return 2;
@@ -132,7 +132,7 @@ main(
 	    if (argc == 2) {
 		chars = snprintf(msg, sizeof(msg) - 1,
 			"usage: %s -g <file> <string>\n"
-		    "grep for a #define\n"
+			"grep for a #define\n"
 			"exitcodes: integer of the found string (no decimals)\n",
 			argv[0]);
 		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
@@ -150,7 +150,7 @@ main(
 		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
 			&dwWritten, NULL);
 		return 2;
-	}
+	    }
 	    return SubstituteFile(argv[2], argv[3]);
 	case 'V':
 	    if (argc != 4) {
@@ -162,7 +162,7 @@ main(
 		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
 		    &dwWritten, NULL);
 		return 0;
-    }
+	    }
 	    printf("%s\n", GetVersionFromFile(argv[2], argv[3]));
 	    return 0;
 	}
@@ -175,7 +175,7 @@ main(
     WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars, &dwWritten, NULL);
     return 2;
 }
-
+
 int
 CheckForCompilerFeature(
     const char *option)
@@ -309,7 +309,7 @@ CheckForCompilerFeature(
              || strstr(Out.buffer, "D2021") != NULL
              || strstr(Err.buffer, "D2021") != NULL);
 }
-
+
 int
 CheckForLinkerFeature(
     const char *option)
@@ -434,7 +434,7 @@ CheckForLinkerFeature(
 	    strstr(Out.buffer, "LNK4044") != NULL ||
 	    strstr(Err.buffer, "LNK4044") != NULL);
 }
-
+
 DWORD WINAPI
 ReadFromPipe(
     LPVOID args)
@@ -459,7 +459,7 @@ ReadFromPipe(
 
     return 0;  /* makes the compiler happy */
 }
-
+
 int
 IsIn(
     const char *string,
@@ -467,9 +467,9 @@ IsIn(
 {
     return (strstr(string, substring) != NULL);
 }
-
+
 /*
- *  Find a specified #define by name.
+ * Find a specified #define by name.
  *
  * If the line is '#define TCL_VERSION "8.5"', it returns 85 as the result.
  */
