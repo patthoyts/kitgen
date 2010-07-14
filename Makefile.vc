@@ -5,11 +5,12 @@
 # To make use of this build system create a build subdirectory 
 # 8.4\kit-msvc or 8.5\kit-msvc and create a Makefile that contains only
 #
-#  !include ..\..\Makefile.vc
 #  all: lite heavy
+#  !include ..\..\Makefile.vc
 #
 # Ensure that 8.5\tcl and 8.5\tk contain copies of the tcl and tk sources
 # (or 8.4\*, or 8.6\* if you are using another version)
+# You can download from http://prdownloads.sourceforge.net/tcl/
 #
 # Finally change to this build directory and build it all using 
 #  nmake -nologo VERSION=85
@@ -19,17 +20,20 @@
 # For example:
 #
 #  mkdir 8.5
-#  mkdir 8.5\win32-ix86
-#  echo !include ..\..\Makefile.vc  > 8.5\win32-ix86\Makefile
-#  echo all: lite heavy            >> 8.5\win32-ix86\Makefile
 #  cd 8.5
-#  cvs -d:pserver:anonymous@tcl.cvs.sourceforge.net:/cvsroot/tcl co -r core-8-5-branch tcl
-#  cvs -d:pserver:anonymous@tktoolkit.cvs.sourceforge.net:/cvsroot/tktoolkit co -r core-8-5-branch tk
+#  unzip tcl858-src.zip
+#  rename tcl8.5.8 tcl
+#  unzip tk858-src.zip
+#  rename tk8.5.8 tk
+#  mkdir win32-ix86
 #  cd win32-ix86
+#  echo all: lite heavy            >  Makefile
+#  echo !include ..\..\Makefile.vc >> Makefile
 #  nmake -nologo VERSION=85
 #
-# You do not have to use cvs. You could just unpack a source archive in the
-# correct location.
+# If you want to work with the current development versions, then replace the zip
+# file download steps with a CVS checkout
+#
 
 !ifndef VERSION
 !message *** You must specify the Tcl version. Set VERSION=84, 85 or 86

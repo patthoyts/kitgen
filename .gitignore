@@ -6,3 +6,19 @@
 # Ignore the build directories but not the 8.x extensions directory
 /8.*/
 !/8.x
+
+# Ignore nmake temporary files
+_junk.pch
+nmakehlp.exe
+nmakehlp.obj
+vercl.i
+vercl.x
+versions.vc
+*.pdb
+8.x/vqtcl/win/version.vc
+8.x/thread/win/vc/version.vc
+
+# Ignore zlib build products when using msvc
+8.x/zlib/*.obj
+8.x/zlib/zlib.lib
+8.x/zlib/zlib1.lib
