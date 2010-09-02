@@ -159,6 +159,8 @@ foreach f {
     lib/tk8@/fontchooser.tcl
     lib/tk8@/icons.tcl
     lib/tk8@/iconlist.tcl
+    lib/tk8@/megawidget.tcl
+    lib/tk8@/images/lamp.png
 } {
     set fx [string map $versmap $f]
     if {[file exists build/$fx]} {
