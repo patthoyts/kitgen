@@ -97,8 +97,14 @@ build/vqtcl: build/tcl
 
 build/zlib: build/tcl
 	cp -R ../../8.x/zlib/. $@
+ifeq ($(PLAT),win)
+	cd $@ && make -f win32/Makefile.gcc libz.a && \
+	cp libz.a ../lib/libz.a && \
+	cp zlib.h zconf.h ../include/
+else
 	cd $@ && CC=$(CC) sh configure && \
 	$(MAKE) install prefix=..
+endif
 
 base: build/tcl build/tk
 	ls -l build/bin
