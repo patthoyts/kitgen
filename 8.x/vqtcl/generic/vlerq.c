@@ -39,8 +39,10 @@ typedef struct Tcl_Obj *Object_p;
 #define VALUES_MUST_BE_ALIGNED 1
 #endif
 
-#if !defined(_BIG_ENDIAN) && defined(WORDS_BIGENDIAN)
+#if defined(WORDS_BIGENDIAN)
+#if !defined(_BIG_ENDIAN) || _BIG_ENDIAN == ""
 #define _BIG_ENDIAN 1
+#endif
 #endif
 
 #if DEBUG+0

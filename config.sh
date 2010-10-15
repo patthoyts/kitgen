@@ -68,7 +68,8 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
       ;;
       
     Linux)
-      echo "CXX        = gcc"
+      echo "CC         = ${CC:=gcc}"
+      echo "CXX        = ${CXX:=gcc}"
       echo "LDFLAGS    = -ldl -lm"
       echo "LDXXFLAGS  = -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic"
       echo "GUI_OPTS   = -L/usr/X11R6/lib -lX11 -lXss"
@@ -82,6 +83,7 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
       ;;
 
     *BSD)
+      echo "CC         = ${CC:=gcc}"
       echo "CFLAGS    += -I/usr/X11R6/include"
       echo "LDFLAGS    = -lm"
       echo "GUI_OPTS   = -L/usr/X11R6/lib -lX11 -lXss"
@@ -111,7 +113,8 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
       ;;
 
     SunOS)
-      echo "CXX        = gcc"
+      echo "CC         = ${CC:=gcc}"
+      echo "CXX        = ${CXX:=gcc}"
       echo "CFLAGS    += -I/usr/openwin/include"
       echo "LDFLAGS    = -ldl -lsocket -lnsl -lm"
       echo "LDXXFLAGS  = -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic"
@@ -148,7 +151,7 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
   case $tzdata  in 1) kitopts="$kitopts -z" ;; esac
   
   case $thread in
-    1) case $mach in Linux|SunOS)
+    1) case $mach in Linux|SunOS|*BSD)
 	       echo "LDFLAGS   += -lpthread" ;;
        esac
        echo "TCL_OPTS   = --enable-threads"
