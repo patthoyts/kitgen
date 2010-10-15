@@ -15,10 +15,15 @@ vercl.i
 vercl.x
 versions.vc
 *.pdb
-8.x/vqtcl/win/version.vc
-8.x/thread/win/vc/version.vc
+/8.x/vqtcl/win/version.vc
+/8.x/thread/win/vc/version.vc
 
 # Ignore zlib build products when using msvc
-8.x/zlib/*.obj
-8.x/zlib/zlib.lib
-8.x/zlib/zlib1.lib
+/8.x/zlib/*.obj
+/8.x/zlib/zlib.lib
+/8.x/zlib/zlib1.lib
+
+# Metakit build products
+/8.x/mk/builds/
+/8.x/mk/win/Debug/
+/8.x/mk/win/Release/

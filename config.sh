@@ -91,9 +91,12 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
       ;;
 
     MINGW*)
-      echo 'LDFLAGS    = build/lib/dde1*/tcldde1*.a build/lib/reg1*/tclreg1*.a'
-      if [ $root != "8.4" ]; then
-          echo 'LDFLAGS   += -lws2_32'
+      echo "CC         = ${CC:=gcc}"
+      echo 'LDFLAGS    = build/lib/dde1*/*tcldde1*.a build/lib/reg1*/*tclreg1*.a'
+      [ $root != "8.4" ]   && echo 'LDFLAGS   += -lws2_32'
+      if [ ${root#8.} -ge 6 ]; then
+          echo 'LDFLAGS   += -lnetapi32'
+          echo 'LDFLAGS   += build/lib/*tclstub8*.a'
       fi
       echo 'GUI_OPTS   = -lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32'
       echo 'GUI_OPTS  += -lole32 -loleaut32 -luuid'

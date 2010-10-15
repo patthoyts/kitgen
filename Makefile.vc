@@ -94,7 +94,7 @@ X       = tsx
 !ifndef KITOPTS
 KITOPTS = -t
 !endif
-LIBS    = user32.lib gdi32.lib ws2_32.lib
+LIBS    = netapi32.lib user32.lib gdi32.lib ws2_32.lib
 !endif
 
 !if $V > 85
