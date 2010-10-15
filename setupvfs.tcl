@@ -422,7 +422,8 @@ switch [info sharedlibext] {
       } err]} { puts "ERROR: $err"}
     }
     catch {
-      file delete [glob build/lib/libtk8?.a] ;# so only libtk8?s.a will be found
+      # wtf?
+      #file delete [glob build/lib/libtk8?.a] ;# so only libtk8?s.a will be found
     }
     catch {
       file copy -force [glob build/bin/tk8*.dll] build/lib/libtk$tcl_version.dll
