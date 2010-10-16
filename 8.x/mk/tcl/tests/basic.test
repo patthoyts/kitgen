@@ -3,16 +3,16 @@
 
 source [file join [file dir [info script]] initests.tcl]
 
-test 0 {} {
+test basic-0 {} {
   catch { package require ? }
   lindex [package versions Mk4tcl] end
 } $version
 
-test 1 {} {
+test basic-1 {} {
   package require Mk4tcl
 } $version
 
-test 2 {no databases} {
+test basic-2 {no databases} {
   set v [mk::file open]
     # ignore one entry if run from a VFS-based TclKit
   if {[lindex $v 0] == "exe"} {
@@ -20,13 +20,13 @@ test 2 {no databases} {
   }
 } {}
 
-test 3 {temp database} -body {
+test basic-3 {temp database} -body {
   # 2003-10-01: this was wrong when run from tclkit, which has "exe" open
   #C [mk::file open] {db {}}
   match "*db {}*" [mk::file open]]
 } -setup {mk::file open db} -cleanup {mk::file close db}
 
-test 4 {temp data} -body {
+test basic-4 {temp data} -body {
   mk::view layout db.a {s i:I}
   set n [mk::row append db.a s one i 1]
   equal $n db.a!0
@@ -41,13 +41,13 @@ test 4 {temp data} -body {
   equal $e {view index is out of range}
 } -setup {mk::file open db} -cleanup {mk::file close db}
 
-test 5 {use same tag twice} -body {
+test basic-5 {use same tag twice} -body {
   catch {mk::file open db} e
   equal $e {file already open}
 } -setup {mk::file open db} -cleanup {mk::file close db}
 
 set f f6.tmp
-test 6 {open file} -body {
+test basic-6 {open file} -body {
   file delete $f
   set f $f
   mk::file open db $f
@@ -64,16 +64,22 @@ test 6 {open file} -body {
 } -cleanup {mk::file close db}
 file delete $f
 
-set f f7.tmp
-test 7 {open same file again} -body {
+# A memory-mapped file can't be deleted while mapped on windows.
+test basic-7 {open same file again} -constraints {unix} -setup {
+  set f f7.tmp
+  mk::file open db1 $f
+} -body {
   file delete $f
   equal [mk::file open db2 $f] db2
   mk::file close db2
   return
-} -setup {mk::file open db1 $f} -cleanup {mk::file close db1}
-file delete $f
+} -cleanup {
+  mk::file close db1
+  file delete -force $f
+  unset f
+} -returnCodes {ok error}
 
-test 8 {simple select} -body {
+test basic-8 {simple select} -body {
   mk::view layout db.a s
   foreach x {one One two Two three Three four Four} {
     mk::row append db.a s $x
@@ -92,7 +98,7 @@ test 8 {simple select} -body {
   equal [mk::select db.a -keyword s o] {0 1}
 } -setup {mk::file open db} -cleanup {mk::file close db}
 
-test 9 {simple sort} -body {
+test basic-9 {simple sort} -body {
   mk::view layout db.a s
   foreach x {one One two Two three Three four Four} {
     mk::row append db.a s $x
@@ -101,7 +107,7 @@ test 9 {simple sort} -body {
   equal [mk::select db.a -rsort s] {2 3 4 5 0 1 6 7}
 } -setup {mk::file open db} -cleanup {mk::file close db}
 
-test 10 {get size} -body {
+test basic-10 {get size} -body {
   mk::view layout db.v {a:I b:I}
   mk::row append db.v
   equal [mk::get db.v!0] {a 0 b 0}
@@ -115,7 +121,7 @@ test 10 {get size} -body {
   equal [mk::get db.v!0 -size b a] {0 4}
 } -setup {mk::file open db} -cleanup {mk::file close db}
 
-test 11 {case-insensitive select} -body {
+test basic-11 {case-insensitive select} -body {
   mk::view layout db.a s
   foreach x {one One two Two three Three four Four} {
     mk::row append db.a s $x
@@ -126,7 +132,7 @@ test 11 {case-insensitive select} -body {
   equal [mk::select db.a -regexp s (?i)t] {2 3 4 5}
 } -setup {mk::file open db} -cleanup {mk::file close db}
 
-test 12 {channel interface} -body {
+test basic-12 {channel interface} -body {
   mk::view layout db.a {m:B}
   mk::view size db.a 1
 
@@ -159,7 +165,7 @@ test 12 {channel interface} -body {
   close $fd
 } -setup {mk::file open db} -cleanup {mk::file close db}
 
-test 13 {recursive subviews} -body {
+test basic-13 {recursive subviews} -body {
   mk::view layout db.v {tag {nest ^}}
   
   mk::row append db.v tag a
@@ -170,5 +176,140 @@ test 13 {recursive subviews} -body {
   equal [mk::get db.v!0.nest!0 tag] b
   equal [mk::get db.v!0.nest!0.nest!0 tag] c
 } -setup {mk::file open db} -cleanup {mk::file close db}
+
+proc onRead {chan size cmd} {
+    set data [read $chan $size]
+    if {[set eof [eof $chan]]} {
+        fileevent $chan readable {}
+        set ::waiting eof
+    }
+    uplevel #0 [linsert $cmd end $eof $data]
+}
+
+test basic-14 "channel fileevent interface" -setup {
+    mk::file open db
+    set data [string repeat a 655]
+    set ::size 0; set ::waiting {}
+    proc basic14 {eof data} {incr ::size [string length $data]}
+} -body {
+    mk::view layout db.a {m:B}
+    mk::view size db.a 1
+
+    set fd [mk::channel db.a!0 m w]
+    fconfigure $fd -translation binary
+    puts -nonewline $fd $data
+    close $fd
+    
+    set fd [mk::channel db.a!0 m]
+    fconfigure $fd -translation binary
+    fileevent $fd readable [list onRead $fd 1024 ::basic14]
+    set aid [after 1000 {set ::waiting timeout}]
+    vwait ::waiting
+    after cancel $aid
+    close $fd
+    list $::waiting $::size
+} -cleanup {
+    mk::file close db
+    unset ::size ::waiting
+    rename basic14 {}
+} -result {eof 655}
+
+test basic-15 "channel fileevent interface (multiple)" -setup {
+    mk::file open db
+    set data [string repeat a 81920]
+    set ::size 0; set ::waiting {}
+    proc basic15 {eof data} {incr ::size [string length $data]}
+} -body {
+    mk::view layout db.a {m:B}
+    mk::view size db.a 1
+
+    set fd [mk::channel db.a!0 m w]
+    fconfigure $fd -translation binary
+    puts -nonewline $fd $data
+    close $fd
+    
+    set fd [mk::channel db.a!0 m]
+    fconfigure $fd -translation binary
+    fileevent $fd readable [list onRead $fd 1024 ::basic15]
+    set aid [after 1000 {set ::waiting timeout}]
+    vwait ::waiting
+    after cancel $aid
+    close $fd
+    list $::waiting $::size
+} -cleanup {
+    mk::file close db
+    unset ::size ::waiting
+    rename basic15 {}
+} -result {eof 81920}
+
+test basic-16 "fcopy async" -setup {
+    mk::file open db
+    set data [string repeat a 81920]
+    set outfile [makeFile {} basic16.dat]
+    set ::waiting {}
+    proc basic16 {count {err ok}} {set ::waiting $err}
+} -body {
+    mk::view layout db.a {m:B}
+    mk::view size db.a 1
+
+    set fd [mk::channel db.a!0 m w]
+    fconfigure $fd -translation binary
+    puts -nonewline $fd $data
+    close $fd
+    
+    set fd [mk::channel db.a!0 m]
+    fconfigure $fd -translation binary
+    set fout [open $outfile w]
+    fconfigure $fout -translation binary
+    set aid [after 1000 {set ::waiting timeout}]
+    fcopy $fd $fout -command basic16
+    vwait ::waiting
+    after cancel $aid
+    close $fd
+    close $fout
+    list $::waiting [file size $outfile]
+} -cleanup {
+    mk::file close db
+    unset ::waiting
+    rename basic16 {}
+} -result {ok 81920}
+
+test basic-17 "fcopy async multiple" -setup {
+    mk::file open db
+    set data [string repeat a 81920]
+    set outfile [makeFile {} basic17.dat]
+    set ::waiting {}
+    proc basic17 {fin fout count {err ok}} {
+        if {$err ne "ok" || [eof $fin]} {
+            set ::waiting $err
+        } else {
+            fcopy $fin $fout -size 1024 -command [list basic17 $fin $fout]
+        }
+    }
+} -body {
+    mk::view layout db.a {m:B}
+    mk::view size db.a 1
+
+    set fd [mk::channel db.a!0 m w]
+    fconfigure $fd -translation binary
+    puts -nonewline $fd $data
+    close $fd
+    
+    set fd [mk::channel db.a!0 m]
+    fconfigure $fd -translation binary
+    set fout [open $outfile w]
+    fconfigure $fout -translation binary
+    set aid [after 1000 {set ::waiting timeout}]
+    fcopy $fd $fout -size 1024 -command [list basic17 $fd $fout]
+    vwait ::waiting
+    after cancel $aid
+    close $fd
+    close $fout
+    list $::waiting [file size $outfile]
+} -cleanup {
+    mk::file close db
+    unset ::waiting
+    rename basic17 {}
+} -result {ok 81920}
 
 ::tcltest::cleanupTests

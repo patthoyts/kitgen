@@ -111,6 +111,9 @@ class MkPath {
 ///////////////////////////////////////////////////////////////////////////////
 // A workspace manages a number of storage objects and their associated paths.
 
+class SiasStrategy;
+typedef SiasStrategy MkChannel;
+
 class MkWorkspace {
     c4_PtrArray _items; // items, or null if released
     c4_Bytes _usedBuffer; // buffer, using 1 byte per entry
@@ -119,6 +122,7 @@ class MkWorkspace {
 
   public:
     Tcl_Interp *_interp;
+    MkChannel *_chanList;
 
     struct Item {
         const c4_String _name; // the alias for this storage

@@ -182,6 +182,8 @@ class SiasStrategy: public c4_Strategy {
     Tcl_Channel _chan;
     int _validMask;
     int _watchMask;
+    int _flags;
+    SiasStrategy *_next;
     Tcl_Interp *_interp;
 
     SiasStrategy(c4_Storage &storage_, const c4_View &view_, const c4_BytesProp
@@ -259,21 +261,56 @@ class SiasStrategy: public c4_Strategy {
 ///////////////////////////////////////////////////////////////////////////////
 // New in 1.2: channel interface to memo fields
 
-typedef SiasStrategy MkChannel;
-
 typedef struct {
   Tcl_Event header;
   MkChannel *chan;
+  int flags;
 } MkEvent;
+
+#define CHANNEL_FLAG_PENDING (1<<1)
 
 static int mkEventProc(Tcl_Event *evPtr, int flags) {
   MkEvent *me = (MkEvent*)evPtr;
 
-  if (!(flags &TCL_FILE_EVENTS))
+  if (!(flags & TCL_FILE_EVENTS))
     return 0;
 
-  Tcl_NotifyChannel(me->chan->_chan, me->chan->_watchMask);
+  me->chan->_flags &= ~CHANNEL_FLAG_PENDING;
+  Tcl_NotifyChannel(me->chan->_chan, me->chan->_watchMask & me->flags);
   return 1;
+}
+
+static void SetupProc(ClientData clientData, int flags) {
+  MkWorkspace *ws = (MkWorkspace *)clientData;
+  int msec = 10000;
+  Tcl_Time blockTime = {0, 0};
+  if (!(flags & TCL_FILE_EVENTS))
+    return;
+  for (MkChannel *chan = ws->_chanList; chan != NULL; chan = chan->_next) {
+    msec = 10;
+  }
+  blockTime.sec = msec / 1000;
+  blockTime.usec = (msec % 1000) * 1000;
+  Tcl_SetMaxBlockTime(&blockTime);
+}
+
+static void CheckProc(ClientData clientData, int flags) {
+  MkWorkspace *ws = (MkWorkspace *)clientData;
+  if (!(flags & TCL_FILE_EVENTS))
+    return;
+  for (MkChannel *chan = ws->_chanList; chan != NULL; chan = chan->_next) {
+    if (chan->_watchMask == 0)
+      continue;
+    int mask = TCL_WRITABLE | TCL_READABLE;
+    if (chan->_watchMask & mask) {
+      MkEvent *me = (MkEvent *)ckalloc(sizeof(MkEvent));
+      chan->_flags |= CHANNEL_FLAG_PENDING;
+      me->header.proc = mkEventProc;
+      me->chan = chan;
+      me->flags = mask;
+      Tcl_QueueEvent((Tcl_Event *)me, TCL_QUEUE_TAIL);
+    }
+  }
 }
 
 static int mkEventFilter(Tcl_Event *evPtr, ClientData instanceData) {
@@ -285,10 +322,18 @@ static int mkEventFilter(Tcl_Event *evPtr, ClientData instanceData) {
 static int mkClose(ClientData instanceData, Tcl_Interp *interp) {
   MkChannel *chan = (MkChannel*)instanceData;
 
+  /* remove this channel from the package list */
+  MkWorkspace *ws = (MkWorkspace*)Tcl_GetAssocData(interp, "mk4tcl", 0);
+  MkChannel **tmpPtrPtr = &ws->_chanList;
+  while (*tmpPtrPtr && *tmpPtrPtr != chan) {
+    tmpPtrPtr = &(*tmpPtrPtr)->_next;
+  }
+  *tmpPtrPtr = chan->_next;
+  
   Tcl_DeleteEvents(mkEventFilter, (ClientData)chan);
   chan->_chan = 0;
   delete chan;
-
+  
   return TCL_OK;
 }
 
@@ -726,7 +771,7 @@ void MkWorkspace::Item::ForceRefresh() {
   ++generation; // make sure all cached paths refresh on next access
 }
 
-MkWorkspace::MkWorkspace(Tcl_Interp *ip_): _interp(ip_) {
+MkWorkspace::MkWorkspace(Tcl_Interp *ip_): _interp(ip_), _chanList(NULL) {
   new Item("", "", 0, _items, 0);
 
   // never uses entry zero (so atoi failure in ForgetPath is harmless)
@@ -741,6 +786,7 @@ MkWorkspace::~MkWorkspace() {
     delete Nth(i);
 
   // need this to prevent recursion in Tcl_DeleteAssocData in 8.2 (not 8.0!)
+  Tcl_DeleteEventSource(SetupProc, CheckProc, this);
   Tcl_SetAssocData(_interp, "mk4tcl", 0, 0);
   Tcl_DeleteAssocData(_interp, "mk4tcl");
 }
@@ -2371,6 +2417,7 @@ int MkTcl::ChannelCmd() {
 
   mkChan->_watchMask = 0;
   mkChan->_validMask = mode;
+  mkChan->_flags = 0;
   mkChan->_interp = interp;
   mkChan->_chan = Tcl_CreateChannel(&mkChannelType, buffer, (ClientData)mkChan,
     mode);
@@ -2379,6 +2426,10 @@ int MkTcl::ChannelCmd() {
     Tcl_Seek(mkChan->_chan, 0, SEEK_END);
 
   Tcl_RegisterChannel(interp, mkChan->_chan);
+
+  /* insert this channel at the front of the workspace channels list */
+  mkChan->_next = work._chanList;
+  work._chanList = mkChan;
 
   if (_error)
     return _error;
@@ -2512,6 +2563,7 @@ static int Mktcl_Cmds(Tcl_Interp *interp, bool /*safe*/) {
     // since that does not seem to trigger exitproc handling (!)
     Tcl_SetAssocData(interp, "mk4tcl", DelProc, ws);
     Tcl_CreateExitHandler(ExitProc, ws);
+    Tcl_CreateEventSource(SetupProc, CheckProc, ws);
   }
 
   // this list must match the "CmdDef defTab []" above.
@@ -2550,3 +2602,11 @@ EXTERN int Mk_SafeInit(Tcl_Interp *interp) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+
+/*
+ * Local variables:
+ * mode: c
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */
