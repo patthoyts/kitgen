@@ -184,11 +184,12 @@ class SiasStrategy: public c4_Strategy {
     int _watchMask;
     int _flags;
     SiasStrategy *_next;
+    MkWorkspace *_workspace;
     Tcl_Interp *_interp;
 
     SiasStrategy(c4_Storage &storage_, const c4_View &view_, const c4_BytesProp
       &memo_, int row_): _storage(storage_), _view(view_), _memo(memo_), _row
-      (row_), _position(0), _interp(0) {
+      (row_), _position(0), _interp(0), _next(0), _workspace(0) {
         // set up mapping if the memo itself is mapped in its entirety
         c4_Strategy &strat = storage_.Strategy();
         if (strat._mapStart != 0) {
@@ -286,9 +287,8 @@ static void SetupProc(ClientData clientData, int flags) {
   Tcl_Time blockTime = {0, 0};
   if (!(flags & TCL_FILE_EVENTS))
     return;
-  for (MkChannel *chan = ws->_chanList; chan != NULL; chan = chan->_next) {
+  if (ws->_chanList != 0)
     msec = 10;
-  }
   blockTime.sec = msec / 1000;
   blockTime.usec = (msec % 1000) * 1000;
   Tcl_SetMaxBlockTime(&blockTime);
@@ -321,16 +321,21 @@ static int mkEventFilter(Tcl_Event *evPtr, ClientData instanceData) {
 
 static int mkClose(ClientData instanceData, Tcl_Interp *interp) {
   MkChannel *chan = (MkChannel*)instanceData;
+  MkWorkspace *ws = chan->_workspace;
+  MkChannel **tmpPtrPtr = &ws->_chanList;
+
+  Tcl_DeleteEvents(mkEventFilter, (ClientData)chan);
 
   /* remove this channel from the package list */
-  MkWorkspace *ws = (MkWorkspace*)Tcl_GetAssocData(interp, "mk4tcl", 0);
-  MkChannel **tmpPtrPtr = &ws->_chanList;
-  while (*tmpPtrPtr && *tmpPtrPtr != chan) {
+  while (*tmpPtrPtr && (*tmpPtrPtr != chan)) {
     tmpPtrPtr = &(*tmpPtrPtr)->_next;
   }
-  *tmpPtrPtr = chan->_next;
-  
-  Tcl_DeleteEvents(mkEventFilter, (ClientData)chan);
+  if (*tmpPtrPtr == chan) {
+      *tmpPtrPtr = chan->_next;
+      chan->_next = 0;
+  } else {
+      d4_assert(false);
+  }
   chan->_chan = 0;
   delete chan;
   
@@ -771,16 +776,18 @@ void MkWorkspace::Item::ForceRefresh() {
   ++generation; // make sure all cached paths refresh on next access
 }
 
-MkWorkspace::MkWorkspace(Tcl_Interp *ip_): _interp(ip_), _chanList(NULL) {
+MkWorkspace::MkWorkspace(Tcl_Interp *ip_): _interp(ip_), _chanList(0) {
   new Item("", "", 0, _items, 0);
 
   // never uses entry zero (so atoi failure in ForgetPath is harmless)
   _usedRows = _usedBuffer.SetBufferClear(16); 
-    // no realloc for first 16 temp rows
+  // no realloc for first 16 temp rows
 }
 
 MkWorkspace::~MkWorkspace() {
   CleanupCommands();
+
+  d4_assert(_chanList == 0);
 
   for (int i = _items.GetSize(); --i >= 0;)
     delete Nth(i);
@@ -2427,12 +2434,13 @@ int MkTcl::ChannelCmd() {
 
   Tcl_RegisterChannel(interp, mkChan->_chan);
 
-  /* insert this channel at the front of the workspace channels list */
-  mkChan->_next = work._chanList;
-  work._chanList = mkChan;
-
   if (_error)
     return _error;
+
+  /* insert this channel at the front of the workspace channels list */
+  mkChan->_workspace = &work;
+  mkChan->_next = work._chanList;
+  work._chanList = mkChan;
 
   KeepRef o = tcl_NewStringObj(buffer);
   return tcl_SetObjResult(o);
@@ -2539,6 +2547,7 @@ void MkWorkspace::CleanupCommands() {
 }
 
 static void ExitProc(ClientData cd_) {
+  Tcl_DeleteEventSource(SetupProc, CheckProc, cd_);
   delete (MkWorkspace*)cd_;
 }
 

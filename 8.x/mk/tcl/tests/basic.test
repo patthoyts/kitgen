@@ -2,6 +2,7 @@
 # %renumber<^\s*test >%
 
 source [file join [file dir [info script]] initests.tcl]
+package require Mk4tcl
 
 test basic-0 {} {
   catch { package require ? }
@@ -177,6 +178,15 @@ test basic-13 {recursive subviews} -body {
   equal [mk::get db.v!0.nest!0.nest!0 tag] c
 } -setup {mk::file open db} -cleanup {mk::file close db}
 
+
+proc mkstream {args} {
+    if {[llength $args] != 4} {return -code error "invalid # args"}
+    set fd [eval [linsert [lrange $args 0 end-1] 0 mk::channel]]
+    fconfigure $fd -translation binary
+    puts -nonewline $fd [lindex $args end]
+    close $fd
+}
+
 proc onRead {chan size cmd} {
     set data [read $chan $size]
     if {[set eof [eof $chan]]} {
@@ -194,11 +204,7 @@ test basic-14 "channel fileevent interface" -setup {
 } -body {
     mk::view layout db.a {m:B}
     mk::view size db.a 1
-
-    set fd [mk::channel db.a!0 m w]
-    fconfigure $fd -translation binary
-    puts -nonewline $fd $data
-    close $fd
+    mkstream db.a!0 m w $data
     
     set fd [mk::channel db.a!0 m]
     fconfigure $fd -translation binary
@@ -212,7 +218,7 @@ test basic-14 "channel fileevent interface" -setup {
     mk::file close db
     unset ::size ::waiting
     rename basic14 {}
-} -result {eof 655}
+} -result {eof 655} -returnCodes {ok error}
 
 test basic-15 "channel fileevent interface (multiple)" -setup {
     mk::file open db
@@ -222,12 +228,7 @@ test basic-15 "channel fileevent interface (multiple)" -setup {
 } -body {
     mk::view layout db.a {m:B}
     mk::view size db.a 1
-
-    set fd [mk::channel db.a!0 m w]
-    fconfigure $fd -translation binary
-    puts -nonewline $fd $data
-    close $fd
-    
+    mkstream db.a!0 m w $data
     set fd [mk::channel db.a!0 m]
     fconfigure $fd -translation binary
     fileevent $fd readable [list onRead $fd 1024 ::basic15]
@@ -251,12 +252,7 @@ test basic-16 "fcopy async" -setup {
 } -body {
     mk::view layout db.a {m:B}
     mk::view size db.a 1
-
-    set fd [mk::channel db.a!0 m w]
-    fconfigure $fd -translation binary
-    puts -nonewline $fd $data
-    close $fd
-    
+    mkstream db.a!0 m w $data
     set fd [mk::channel db.a!0 m]
     fconfigure $fd -translation binary
     set fout [open $outfile w]
@@ -289,12 +285,7 @@ test basic-17 "fcopy async multiple" -setup {
 } -body {
     mk::view layout db.a {m:B}
     mk::view size db.a 1
-
-    set fd [mk::channel db.a!0 m w]
-    fconfigure $fd -translation binary
-    puts -nonewline $fd $data
-    close $fd
-    
+    mkstream db.a!0 m w $data
     set fd [mk::channel db.a!0 m]
     fconfigure $fd -translation binary
     set fout [open $outfile w]
@@ -311,5 +302,44 @@ test basic-17 "fcopy async multiple" -setup {
     unset ::waiting
     rename basic17 {}
 } -result {ok 81920}
+
+test basic-18 "fcopy async multiple files" -setup {
+    mk::file open db
+    set outfilea [makeFile {} basic18a.dat]
+    set outfileb [makeFile {} basic18b.dat]
+    set ::waiting {} ; set ::waitcount 2
+    proc basic18 {fin fout count {err ok}} {
+        if {$err ne "ok"} {
+            set ::waiting "$fin/$fout: $err"
+        } elseif {[eof $fin]} {
+            close $fin; close $fout
+            incr ::waitcount -1
+            if {$::waitcount == 0} { set ::waiting ok }
+        } else {
+            fcopy $fin $fout -size 1024 -command [list basic18 $fin $fout]
+        }
+    }
+} -body {
+    mk::view layout db.a {m:B}
+    mk::view size db.a 2
+    mkstream db.a!0 m w [string repeat a 81920]
+    mkstream db.a!1 m w [string repeat b 163840]
+    set fda [mk::channel db.a!0 m]; fconfigure $fda -translation binary
+    set fdb [mk::channel db.a!1 m]; fconfigure $fdb -translation binary
+    set fouta [open $outfilea w]; fconfigure $fouta -translation binary
+    set foutb [open $outfileb w]; fconfigure $foutb -translation binary
+    set aid [after 1000 {set ::waiting timeout}]
+    fcopy $fda $fouta -size 1024 -command [list basic18 $fda $fouta]
+    fcopy $fdb $foutb -size 1024 -command [list basic18 $fdb $foutb]
+    vwait ::waiting
+    after cancel $aid
+    catch {close $fda; close $fdb}
+    catch {close $fouta; close $foutb}
+    list $::waiting [file size $outfilea] [file size $outfileb]
+} -cleanup {
+    mk::file close db
+    unset ::waiting
+    rename basic18 {}
+} -result {ok 81920 163840} -returnCodes {ok error}
 
 ::tcltest::cleanupTests
