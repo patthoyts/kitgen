@@ -1,0 +1,13 @@
+/*.o
+#
+# Ignore all msys-cl build intermediates
+#
+/*.obj
+/Mk4tcl2*.dll
+/Mk4tcl2*.exp
+/Mk4tcl2*.lib
+/config.h
+/config.log
+/config.status
+/Makefile
+/pkgIndex.tcl
