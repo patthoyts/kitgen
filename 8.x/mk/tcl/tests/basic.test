@@ -342,4 +342,28 @@ test basic-18 "fcopy async multiple files" -setup {
     rename basic18 {}
 } -result {ok 81920 163840} -returnCodes {ok error}
 
+test basic-19 "interp exit with open channel" -setup {
+    set interp [interp create]
+    interp eval $interp {
+        package require Mk4tcl
+        mk::file open db
+        mk::view layout db.a {stream:B}
+        mk::view size db.a 1
+        set f [mk::channel db.a!0 stream w]
+        puts -nonewline $f [string repeat c 8192]
+        close $f
+    }
+} -body {
+    set r [interp eval $interp {
+        set fd [mk::channel db.a!0 stream]
+        set r [read $fd]
+        set r
+    }]
+    string length $r
+} -cleanup {
+    interp eval $interp {mk::file close db}
+    interp delete $interp
+    unset interp
+} -result {8192} -returnCodes {error ok}
+
 ::tcltest::cleanupTests
