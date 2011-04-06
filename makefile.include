@@ -102,7 +102,7 @@ ifeq ($(PLAT),win)
 	cp libz.a ../lib/libz.a && \
 	cp zlib.h zconf.h ../include/
 else
-	cd $@ && CC=$(CC) sh configure && \
+	cd $@ && CC=$(CC) CFLAGS=$(CFLAGS) sh configure && \
 	$(MAKE) install prefix=..
 endif
 
