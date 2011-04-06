@@ -83,6 +83,9 @@ defined(_AIX) || defined(__hpux)
 #define q4_LONG64 1
 #elif defined (__VMS)
 #define q4_VAX 1
+#elif defined(__x86_64__)
+#define q4_EMT64
+#define q4_LONG64 1
 #else 
 #define q4_M68K 1
 #endif 
@@ -139,7 +142,7 @@ extern void f4_memmove(void *d, const void *s, int n);
 
 typedef unsigned char t4_byte; // create typedefs for t4_byte, etc.
 
-#if SIZEOF_LONG == 8
+#if q4_LONG64 || SIZEOF_LONG == 8
 typedef int t4_i32; // longs are 64b, so int must be 32b
 #else 
 typedef long t4_i32; // longs aren't 64b, so they are 32b
