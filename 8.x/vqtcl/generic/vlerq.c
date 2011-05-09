@@ -35,7 +35,7 @@ typedef OBJECT_TYPE Object_p;
 typedef struct Tcl_Obj *Object_p;
 #endif
 
-#if !defined(VALUES_MUST_BE_ALIGNED) && (defined(__sparc__) || defined(__sgi__))
+#if !defined(VALUES_MUST_BE_ALIGNED) && (defined(__hppa) || defined(__sparc__) || defined(__sgi__))
 #define VALUES_MUST_BE_ALIGNED 1
 #endif
 
@@ -2066,6 +2066,12 @@ static MappedFile_p OpenMappedFile (const char *filename) {
         if (fd != -1) {
             if (fstat(fd, &sb) == 0) {
                 data = mmap(0, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
+
+                /* On HP-UX mmap does not work multiple times on the same
+                   file, so try a private mmap before giving up on it */
+                if (data == MAP_FAILED)
+                  data = mmap(0, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+
                 if (data != MAP_FAILED)
                     length = sb.st_size;
             }
