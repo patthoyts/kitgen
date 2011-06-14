@@ -32,7 +32,7 @@ if {[llength [info command zlib]] || ![catch {load "" zlib}]} {
 # Use 8.6 reflected channels or the rechan package in earlier versions to
 # provide a memory channel implementation.
 #
-if {[package vsatisfies [package provide Tcl] 8.6]} {
+if {[info command ::chan] ne {}} {
 
     # As the core zlib channel stacking make non-seekable channels we cannot
     # implement vfs::zstream and this feature is disabled in tclkit boot.tcl
@@ -192,7 +192,9 @@ if {[package vsatisfies [package provide Tcl] 8.6]} {
         set ::vfs::_memchan_nam($fd) $filename
 	return $fd
     }
+}
 
+if {[info command rechan] ne "" || ![catch {load "" rechan}]} {
     proc vfs::zstream_handler {zcmd ifd clen ilen imode cmd fd {a1 ""} {a2 ""}} {
 	#puts stderr "z $zcmd $ifd $ilen $cmd $fd $a1 $a2"
 	upvar ::vfs::_zstream_pos($fd) pos

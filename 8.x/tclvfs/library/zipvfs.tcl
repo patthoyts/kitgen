@@ -107,17 +107,61 @@ proc vfs::zip::open {zipfd name mode permissions} {
 	    
 	    ::zip::stat $zipfd $name sb
 
-	    set nfd [vfs::memchan]
-	    fconfigure $nfd -translation binary
+            if {$sb(ino) == -1} {
+                vfs::filesystem posixerror $::vfs::posix(EISDIR)
+            }
+
+#	    set nfd [vfs::memchan]
+#	    fconfigure $nfd -translation binary
 
 	    seek $zipfd $sb(ino) start
-	    set data [zip::Data $zipfd sb 0]
+#	    set data [zip::Data $zipfd sb 0]
 
-	    puts -nonewline $nfd $data
+#	    puts -nonewline $nfd $data
 
-	    fconfigure $nfd -translation auto
-	    seek $nfd 0
-	    return [list $nfd]
+#	    fconfigure $nfd -translation auto
+#	    seek $nfd 0
+#	    return [list $nfd]
+	    # use streaming for files larger than 1MB
+	    if {$::zip::useStreaming && $sb(size) >= 1048576} {
+		set buf [read $zipfd 30]
+		set n [binary scan $buf A4sssssiiiss \
+			    hdr sb(ver) sb(flags) sb(method) \
+			    time date \
+			    sb(crc) sb(csize) sb(size) flen elen]
+	    
+		if { ![string equal "PK\03\04" $hdr] } {
+		    binary scan $hdr H* x
+		    error "bad header: $x"
+		}
+	    
+		set sb(name) [read $zipfd [::zip::u_short $flen]]
+		set sb(extra) [read $zipfd [::zip::u_short $elen]]
+	    
+		if { $sb(flags) & 0x4 } {
+		    # Data Descriptor used
+		    set buf [read $zipfd 12]
+		    binary scan $buf iii sb(crc) sb(csize) sb(size)
+		}
+	    
+		if { $sb(method) != 0} {
+		    set nfd [::zip::zstream $zipfd $sb(csize) $sb(size)]
+		}  else  {
+		    set nfd [::zip::rawstream $zipfd $sb(size)]
+		}
+		return [list $nfd]
+	    }  else  {
+		set nfd [vfs::memchan]
+		fconfigure $nfd -translation binary
+
+		set data [zip::Data $zipfd sb 0]
+
+		puts -nonewline $nfd $data
+
+		fconfigure $nfd -translation auto
+		seek $nfd 0
+		return [list $nfd]
+	    }
 	}
 	default {
 	    vfs::filesystem posixerror $::vfs::posix(EROFS)
@@ -189,6 +233,8 @@ proc vfs::zip::utime {fd path actime mtime} {
 #
 
 namespace eval zip {
+    set zseq 0
+
     array set methods {
 	0	{stored - The file is stored (no compression)}
 	1	{shrunk - The file is Shrunk}
@@ -263,21 +309,21 @@ proc zip::DosTime {date time} {
     set year [expr { (($date >> 9) & 0xFF) + 1980 }]
 
     # Fix up bad date/time data, no need to fail
-    while {$sec  > 59} {incr sec  -60}
-    while {$min  > 59} {incr sec  -60}
-    while {$hour > 23} {incr hour -24}
-    if {$mday < 1}  {incr mday}
-    if {$mon  < 1}  {incr mon}
-    while {$mon > 12} {incr hour -12}
+    if {$sec  > 59} {set sec  59}
+    if {$min  > 59} {set min  59}
+    if {$hour > 23} {set hour 23}
+    if {$mday < 1}  {set mday 1}
+    if {$mday > 31} {set mday 31}
+    if {$mon  < 1}  {set mon  1}
+    if {$mon > 12}  {set mon  12}
 
-    while {[catch {
+    set res 0
+    catch {
 	set dt [format {%4.4d-%2.2d-%2.2d %2.2d:%2.2d:%2.2d} \
 		    $year $mon $mday $hour $min $sec]
 	set res [clock scan $dt -gmt 1]
-    }]} {
-	# Only mday can be wrong, at end of month
-	incr mday -1
     }
+
     return $res
 }
 
@@ -307,7 +353,7 @@ proc zip::Data {fd arr verify} {
 
     set sb(name)   [read $fd [expr {$namelen & 0xffff}]]
     set sb(extra)  [read $fd [expr {$xtralen & 0xffff}]]
-    if {$sb(flags) & (1 << 10)} {
+    if {$sb(flags) & (1 << 11)} {
         set sb(name) [encoding convertfrom utf-8 $sb(name)]
     }
     set sb(name) [string trimleft $sb(name) "./"]
@@ -377,6 +423,11 @@ proc zip::EndOfArchive {fd arr} {
     # after the whole file has been searched.
 
     set sz  [tell $fd]
+    if {[info exists ::zip::max_header_seek]} {
+        if {$::zip::max_header_seek < $sz} {
+            set sz $::zip::max_header_seek
+        }
+    }
     set len 512
     set at  512
     while {1} {
@@ -403,8 +454,14 @@ proc zip::EndOfArchive {fd arr} {
 	}
     }
 
-    set hdr [string range $hdr [expr {$pos + 4}] [expr {$pos + 21}]]
-    set pos [expr {[tell $fd] + $pos - 512}]
+     set hdrlen [string length $hdr]
+     set hdr [string range $hdr [expr $pos + 4] [expr $pos + 21]]
+ 
+     set pos [expr {wide([tell $fd]) + $pos - $hdrlen}]
+ 
+     if {$pos < 0} {
+         set pos 0
+     }
 
     binary scan $hdr ssssiis \
 	cb(ndisk) cb(cdisk) \
@@ -419,10 +476,21 @@ proc zip::EndOfArchive {fd arr} {
 
     # Compute base for situations where ZIP file
     # has been appended to another media (e.g. EXE)
-    set cb(base)	[expr { $pos - $cb(csize) - $cb(coff) }]
+    set base            [expr { $pos - $cb(csize) - $cb(coff) }]
+    if {$base < 0} {
+        set base 0
+    }
+    set cb(base)	$base
+
+    if {$cb(coff) < 0} {
+	set cb(base) [expr {wide($cb(base)) - 4294967296}]
+	set cb(coff) [expr {wide($cb(coff)) + 4294967296}]
+    }
 }
 
 proc zip::TOC {fd arr} {
+    upvar #0 zip::$fd cb
+    upvar #0 zip::$fd.dir cbdir
     upvar 1 $arr sb
 
     set buf [read $fd 46]
@@ -432,6 +500,8 @@ proc zip::TOC {fd arr} {
       sb(crc) sb(csize) sb(size) \
       flen elen clen sb(disk) sb(attr) \
       sb(atx) sb(ino)
+
+    set sb(ino) [expr {$cb(base) + $sb(ino)}]
 
     if { ![string equal "PK\01\02" $hdr] } {
 	binary scan $hdr H* x
@@ -454,11 +524,17 @@ proc zip::TOC {fd arr} {
     set sb(name) [read $fd [u_short $flen]]
     set sb(extra) [read $fd [u_short $elen]]
     set sb(comment) [read $fd [u_short $clen]]
-    if {$sb(flags) & (1 << 10)} {
+    while {$sb(ino) < 0} {
+	set sb(ino) [expr {wide($sb(ino)) + 4294967296}]
+    }
+    if {$sb(flags) & (1 << 11)} {
         set sb(name) [encoding convertfrom utf-8 $sb(name)]
         set sb(comment) [encoding convertfrom utf-8 $sb(comment)]
     }
     set sb(name) [string trimleft $sb(name) "./"]
+    set parent [file dirname $sb(name)]
+    if {$parent == "."} {set parent ""}
+    lappend cbdir([string tolower $parent]) [file tail [string trimright $sb(name) /]]
 }
 
 proc zip::open {path} {
@@ -468,12 +544,13 @@ proc zip::open {path} {
     if {[catch {
 	upvar #0 zip::$fd cb
 	upvar #0 zip::$fd.toc toc
+	upvar #0 zip::$fd.dir cbdir
 
 	fconfigure $fd -translation binary ;#-buffering none
 	
 	zip::EndOfArchive $fd cb
 
-	seek $fd $cb(coff) start
+	seek $fd [expr {$cb(base) + $cb(coff)}] start
 
 	set toc(_) 0; unset toc(_); #MakeArray
 	
@@ -482,9 +559,13 @@ proc zip::open {path} {
 	    
 	    set sb(depth) [llength [file split $sb(name)]]
 	    
-	    set name [string tolower $sb(name)]
-	    set toc($name) [array get sb]
-	    FAKEDIR toc [file dirname $name]
+	    set name [string trimright [string tolower $sb(name)] /]
+	    set sba [array get sb]
+	    set toc($name) $sba
+	    FAKEDIR toc cbdir [file dirname $name]
+	}
+	foreach {n v} [array get cbdir] {
+	    set cbdir($n) [lsort -unique $v]
 	}
     } err]} {
 	close $fd
@@ -494,8 +575,8 @@ proc zip::open {path} {
     return $fd
 }
 
-proc zip::FAKEDIR {arr path} {
-    upvar 1 $arr toc
+proc zip::FAKEDIR {tocarr cbdirarr path} {
+    upvar 1 $tocarr toc $cbdirarr cbdir
 
     if { $path == "."} { return }
 
@@ -506,8 +587,12 @@ proc zip::FAKEDIR {arr path} {
 		name $path \
 		type directory mtime 0 size 0 mode 0777 \
 		ino -1 depth [llength [file split $path]]
+	
+	set parent [file dirname $path]
+	if {$parent == "."} {set parent ""}
+	lappend cbdir($parent) [file tail $path]
     }
-    FAKEDIR toc [file dirname $path]
+    FAKEDIR toc cbdir [file dirname $path]
 }
 
 proc zip::exists {fd path} {
@@ -549,54 +634,286 @@ proc zip::stat {fd path arr} {
 proc zip::getdir {fd path {pat *}} {
     #::vfs::log [list getdir $fd $path $pat]
     upvar #0 zip::$fd.toc toc
+    upvar #0 zip::$fd.dir cbdir
 
     if { $path == "." || $path == "" } {
-	set path [set tmp [string tolower $pat]]
-    } else {
-        set globmap [list "\[" "\\\[" "*" "\\*" "?" "\\?"]
-	set tmp [string tolower $path]
-        set path [string map $globmap $tmp]
-	if {$pat != ""} {
-	    append tmp /[string tolower $pat]
-	    append path /[string tolower $pat]
+	set path ""
+    }  else  {
+	set path [string tolower $path]
+    }
+
+    if {$pat == ""} {
+	if {[info exists cbdir($path)]} {
+	    return [list $path]
+	}  else  {
+	    return [list]
 	}
     }
-    # file split can be confused by the glob quoting so split tmp string
-    set depth [llength [file split $tmp]]
 
-    #vfs::log "getdir $fd $path $depth $pat [array names toc $path]"
-    if {$depth} {
-	set ret {}
-	foreach key [array names toc $path] {
-	    if {[string index $key end] == "/"} {
-		# Directories are listed twice: both with and without
-		# the trailing '/', so we ignore the one with
-		continue
-	    }
-	    array set sb $toc($key)
-
-	    if { $sb(depth) == $depth } {
-		if {[info exists toc(${key}/)]} {
-		    array set sb $toc(${key}/)
+    set rc [list]
+    if {[info exists cbdir($path)]} {
+	if {$pat == "*"} {
+	    set rc $cbdir($path)
+	}  else  {
+	    foreach f $cbdir($path) {
+		if {[string match -nocase $pat $f]} {
+		    lappend rc $f
 		}
-		lappend ret [file tail $sb(name)]
-	    } else {
-		#::vfs::log "$sb(depth) vs $depth for $sb(name)"
 	    }
-	    unset sb
 	}
-	return $ret
-    } else {
-	# just the 'root' of the zip archive.  This obviously exists and
-	# is a directory.
-	return [list {}]
     }
+    return $rc
 }
 
 proc zip::_close {fd} {
     variable $fd
     variable $fd.toc
+    variable $fd.dir
     unset $fd
     unset $fd.toc
+    unset $fd.dir
     ::close $fd
 }
+
+# Implementation of stream based decompression for zip
+if {([info commands ::rechan] != "") || ([info commands ::chan] != "")} {
+    if {![catch {package require Tcl 8.6}]} {
+	# implementation using [zlib stream inflate] and [rechan]/[chan create]
+	proc ::zip::zstream_create {fd} {
+	    upvar #0 ::zip::_zstream_zcmd($fd) zcmd
+	    if {$zcmd == ""} {
+		set zcmd [zlib stream inflate]
+	    }
+	}
+	proc ::zip::zstream_delete {fd} {
+	    upvar #0 ::zip::_zstream_zcmd($fd) zcmd
+	    if {$zcmd != ""} {
+		rename $zcmd ""
+		set zcmd ""
+	    }
+	}
+
+	proc ::zip::zstream_put {fd data} {
+	    upvar #0 ::zip::_zstream_zcmd($fd) zcmd
+	    zstream_create $fd
+	    $zcmd put $data
+	}
+
+	proc ::zip::zstream_get {fd} {
+	    upvar #0 ::zip::_zstream_zcmd($fd) zcmd
+	    zstream_create $fd
+	    return [$zcmd get]
+	}
+
+	set ::zip::useStreaming 1
+    }  elseif {![catch {zlib sinflate ::zip::__dummycommand ; rename ::zip::__dummycommand ""}]} {
+	proc ::zip::zstream_create {fd} {
+	    upvar #0 ::zip::_zstream_zcmd($fd) zcmd
+	    if {$zcmd == ""} {
+		set zcmd ::zip::_zstream_cmd_$fd
+		zlib sinflate $zcmd
+	    }
+	}
+	proc ::zip::zstream_delete {fd} {
+	    upvar #0 ::zip::_zstream_zcmd($fd) zcmd
+	    if {$zcmd != ""} {
+		rename $zcmd ""
+		set zcmd ""
+	    }
+	}
+
+	proc ::zip::zstream_put {fd data} {
+	    upvar #0 ::zip::_zstream_zcmd($fd) zcmd
+	    zstream_create $fd
+	    $zcmd fill $data
+	}
+
+	proc ::zip::zstream_get {fd} {
+	    upvar #0 ::zip::_zstream_zcmd($fd) zcmd
+	    zstream_create $fd
+	    set rc ""
+	    while {[$zcmd fill] != 0} {
+		if {[catch {
+		    append rc [$zcmd drain 4096]
+		}]} {
+		    break
+		}
+	    }
+	    return $rc
+	}
+
+	set ::zip::useStreaming 1
+    }  else  {
+	set ::zip::useStreaming 0
+    }
+}  else  {
+    set ::zip::useStreaming 0
+}
+
+proc ::zip::eventClean {fd} {
+    variable eventEnable
+    eventSet $fd 0
+}
+
+proc ::zip::eventWatch {fd a} {
+    if {[lindex $a 0] == "read"} {
+	eventSet $fd 1
+    }  else  {
+	eventSet $fd 0
+    }
+}
+
+proc zip::eventSet {fd e} {
+    variable eventEnable
+    set cmd [list ::zip:::eventPost $fd]
+    after cancel $cmd
+    if {$e} {
+	set eventEnable($fd) 1
+	after 0 $cmd
+    }  else  {
+	catch {unset eventEnable($fd)}
+    }
+}
+
+proc zip::eventPost {fd} {
+    variable eventEnable
+    if {[info exists eventEnable($fd)] && $eventEnable($fd)} {
+	chan postevent $fd read
+	eventSet $fd 1
+    }
+}
+
+proc ::zip::zstream {ifd clen ilen} {
+    set start [tell $ifd]
+    set cmd [list ::zip::zstream_handler $start $ifd $clen $ilen]
+    if {[catch {
+	set fd [chan create read $cmd]
+    }]} {
+	set fd [rechan $cmd 2]
+    }
+    set ::zip::_zstream_buf($fd) ""
+    set ::zip::_zstream_pos($fd) 0
+    set ::zip::_zstream_tell($fd) $start
+    set ::zip::_zstream_zcmd($fd) ""
+    return $fd
+}
+
+proc ::zip::zstream_handler {istart ifd clen ilen cmd fd {a1 ""} {a2 ""}} {
+    upvar #0 ::zip::_zstream_pos($fd) pos
+    upvar #0 ::zip::_zstream_buf($fd) buf
+    upvar #0 ::zip::_zstream_tell($fd) tell
+    upvar #0 ::zip::_zstream_zcmd($fd) zcmd
+    switch -- $cmd {
+	initialize {
+	    return [list initialize finalize watch read seek]
+	}
+	watch {
+	    eventWatch $fd $a1
+	}
+	seek {
+	    switch $a2 {
+		1 - current { incr a1 $pos }
+		2 - end { incr a1 $ilen }
+	    }
+	    # to seek back, rewind, i.e. start from scratch
+	    if {$a1 < $pos} {
+		zstream_delete $fd
+		seek $ifd $istart
+		set pos 0
+		set buf ""
+		set tell $istart
+	    }
+
+	    while {$pos < $a1} {
+		set n [expr {$a1 - $pos}]
+		if {$n > 4096} { set n 4096 }
+		zstream_handler $istart $ifd $clen $ilen read $fd $n
+	    }
+	    return $pos
+	}
+
+	read {
+	    set r ""
+	    set n $a1
+	    if {$n + $pos > $ilen} { set n [expr {$ilen - $pos}] }
+
+	    while {$n > 0} {
+		set chunk [string range $buf 0 [expr {$n - 1}]]
+		set buf [string range $buf $n end]
+		incr n -[string length $chunk]
+		incr pos [string length $chunk]
+		append r $chunk
+
+		if {$n > 0} {
+		    set c [expr {$istart + $clen - [tell $ifd]}]
+		    if {$c > 4096} { set c 4096 }
+		    if {$c <= 0} {
+			break
+		    }
+		    seek $ifd $tell start
+		    set data [read $ifd $c]
+		    set tell [tell $ifd]
+		    zstream_put $fd $data
+		    append buf [zstream_get $fd]
+		}
+	    }
+	    return $r
+	}
+	close - finalize {
+	    eventClean $fd
+	    if {$zcmd != ""} {
+		rename $zcmd ""
+	    }
+	    unset pos
+	}
+    }
+}
+
+proc ::zip::rawstream_handler {ifd ioffset ilen cmd fd {a1 ""} {a2 ""} args} {
+    upvar ::zip::_rawstream_pos($fd) pos
+    switch -- $cmd {
+	initialize {
+	    return [list initialize finalize watch read seek]
+	}
+	watch {
+	    eventWatch $fd $a1
+	}
+	seek {
+	    switch $a2 {
+		1 - current { incr a1 $pos }
+		2 - end { incr a1 $ilen }
+	    }
+	    if {$a1 < 0} {set a1 0}
+	    if {$a1 > $ilen} {set a1 $ilen}
+	    set pos $a1
+	    return $pos
+	}
+	read {
+	    seek $ifd $ioffset
+	    seek $ifd $pos current
+	    set n $a1
+	    if {$n + $pos > $ilen} { set n [expr {$ilen - $pos}] }
+	    set fc [read $ifd $n]
+	    incr pos [string length $fc]
+	    return $fc
+	}
+	close - finalize {
+	    eventClean $fd
+	    unset pos
+	}
+    }
+}
+
+proc ::zip::rawstream {ifd ilen} {
+    set cname _rawstream_[incr ::zip::zseq]
+    set start [tell $ifd]
+    set cmd [list ::zip::rawstream_handler $ifd $start $ilen]
+    if {[catch {
+	set fd [chan create read $cmd]
+    }]} {
+	set fd [rechan $cmd 2]
+    }
+    set ::zip::_rawstream_pos($fd) 0
+    return $fd
+}
+

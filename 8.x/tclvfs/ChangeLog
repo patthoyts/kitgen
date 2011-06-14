@@ -1,3 +1,83 @@
+2011-05-30  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* zipvfs.tcl: Reverted bug fix for 3224057.  See bug ID 3303287.
+
+
+2011-04-28  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* zipvfs.tcl: Added contributed patch to speed up zipvfs directory 
+	listing.  See patch 3279418.
+
+2011-03-30  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* vfslib.tcl, zipvfs.tcl: Added contributed patches to fix bugs 3160686
+	& 3224057.
+
+2011-03-30  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* globfind.tcl: Updated to latest file version (1.5.3).
+
+2010-12-31  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* vfs.tcl: Removed requirement for 8.6 for sourcing of vfslib.tcl, since
+	that file contains 8.5-relevant utils for chan command.  Vfslib.tcl
+	includes adequate conditional checks for version-dependent commands.
+
+2010-12-30  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* library/zipvfs.tcl: Wojciech Kocjan contributed tweaks to my latest
+	"Frankenstein" patch, which I incorporated.
+
+2010-12-30  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* pkgIndex.tcl.in, vfs.tcl: Switched "package require Tcl 8.4" statement
+	to vfs.tcl to conform with accepted practice.
+
+2010-12-30  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* library/zipvfs.tcl: Applied patch 3005441 to fix issue with UTF-8
+	detection for filename encoding.  Applied patch 3132957 to enable
+	streaming of large files.
+
+2010-12-29  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* generic/vfs.c: include sys/stat.h so build under MinGW64 will succeed.
+	See bug #3107382.
+	* library/zipvfs.tcl: Fixed issues with clock handling, dealing with 
+	trying to [open] a directory, reading a zip file that has been appended
+	to another file.  See bugs 3103687, 3107380
+
+2010-05-16  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* library/vfslib.tcl: Changed memchan condition from Tcl version 8.6 or
+	greater to presence of chan command (since chan now in later 8.5 builds)
+
+2010-02-01  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* Makefile.in (PKG_TCL_SOURCES): Added 'template/tclIndex' to the list 
+	of installed files. Required for vfs's based on template vfs to load.
+
+2010-01-30  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* templatevfs.tcl: workaround for bug in how virtual volumes
+	are mounted. Version bumped to 1.5.4.  See:
+http://sf.net/tracker/?func=detail&aid=2886914&group_id=10894&atid=110894
+
+2009-10-20  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* tclIndex: Corrected version number.
+	* pkgIndex.tcl.in: Edited to replace function of deleted 
+	pkgIndex.tcl in template subdir.
+
+2009-10-15  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	vfs::template package update ver. 1.5.3:
+
+	* templatevfs.tcl: Incorporated AK's fix below.
+	* collatevfs.tcl: ensured binary file contents got written
+	correctly, and ensured that not only file contents but 
+	also file attributes were updated to all write targets.
+
 2009-07-06  Andreas Kupries  <andreask@activestate.com>
 
 	* library/template/templatevfs.tcl (memchan): Fix result for
