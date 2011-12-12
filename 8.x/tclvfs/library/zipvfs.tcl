@@ -73,6 +73,9 @@ proc vfs::zip::stat {zipfd name} {
     #::vfs::log "stat $name"
     ::zip::stat $zipfd $name sb
     #::vfs::log [array get sb]
+    # remove additional mode bits to prevent Tcl from reporting Fossil archives
+    # as socket types
+    set sb(mode) [expr {$sb(mode) & 0x01ff}]
     array get sb
 }
 
@@ -516,7 +519,8 @@ proc zip::TOC {fd arr} {
     set sb(size) [expr {$sb(size) & 0xffffffff}]
     set sb(mtime) [DosTime $date $time]
     set sb(mode) [expr { ($sb(atx) >> 16) & 0xffff }]
-    if { ( $sb(atx) & 0xff ) & 16 } {
+    # check atx field or mode field if this is a directory
+    if { ((( $sb(atx) & 0xff ) & 16) != 0) || (($sb(mode) & 0x4000) != 0) } {
 	set sb(type) directory
     } else {
 	set sb(type) file

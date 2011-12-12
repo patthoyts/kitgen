@@ -1,4 +1,15 @@
-2011-05-30  Steve Huntley  <stephen.huntley@alum.mit.edu>
+2011-11-28  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* vfslib.tcl: Applied contributed patch for bug 3412801.  Clean up watch
+	timers for memchan vfs.
+
+2011-11-28  Steve Huntley  <stephen.huntley@alum.mit.edu>
+
+	* zipvfs.tcl: Applied contributed patch for bug 3395782.  Enables 
+	extraction of contents of zip files created using Fossil.
+
+
+2011-11-28  Steve Huntley  <stephen.huntley@alum.mit.edu>
 
 	* zipvfs.tcl: Reverted bug fix for 3224057.  See bug ID 3303287.
 

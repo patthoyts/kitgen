@@ -62,6 +62,12 @@ if {[info command ::chan] ne {}} {
             }
             finalize {
                 unset buf pos name
+                foreach event {read write} {
+                    upvar #0 ::vfs::_memchan(watch,$event) watch
+                    if {[info exists watch] && ([set idx [lsearch -exact $watch $chan]] >= 0)} {
+                        set watch [lreplace $watch $idx $idx]
+                    }
+                }
             }
             seek {
                 foreach {offset base} $args break
