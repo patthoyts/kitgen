@@ -10,8 +10,6 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
-# RCS: @(#) $Id: itclInt.decls,v 1.9 2007/05/24 21:40:23 hobbs Exp $
 
 library itcl
 

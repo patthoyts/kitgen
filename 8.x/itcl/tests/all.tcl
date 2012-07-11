@@ -6,9 +6,8 @@
 #
 # Copyright (c) 1998-2000 by Ajuba Solutions
 # All rights reserved.
-# 
-# RCS: @(#) $Id: all.tcl,v 1.5 2004/02/12 18:26:18 davygrvy Exp $
 
+package require Tcl 8.4
 package require tcltest 2.1
 
 tcltest::testsDirectory [file dir [info script]]

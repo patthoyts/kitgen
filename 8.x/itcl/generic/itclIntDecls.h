@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: $Id: itclIntDecls.h,v 1.13 2007/05/24 21:40:23 hobbs Exp $
  */
 
 #ifndef _ITCLINTDECLS

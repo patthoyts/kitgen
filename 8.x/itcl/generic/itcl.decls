@@ -9,8 +9,6 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
-# RCS: $Id: itcl.decls,v 1.3 2003/12/17 02:25:37 davygrvy Exp $
 
 library itcl
 

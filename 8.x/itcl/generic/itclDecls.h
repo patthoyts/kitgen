@@ -5,8 +5,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: $Id: itclDecls.h,v 1.9 2003/12/23 05:22:45 davygrvy Exp $
  */
 
 #ifndef _ITCLDECLS

@@ -21,8 +21,6 @@
  *           Bell Labs Innovations for Lucent Technologies
  *           mmclennan@lucent.com
  *           http://www.tcltk.com/itcl
- *
- *     RCS:  $Id: itcl_objects.c,v 1.17 2007/08/07 20:05:30 msofer Exp $
  * ========================================================================
  *           Copyright (c) 1993-1998  Lucent Technologies, Inc.
  * ------------------------------------------------------------------------
@@ -102,7 +100,7 @@ Itcl_CreateObject(interp, name, cdefn, objc, objv, roPtr)
      *  only in the current namespace context.  Otherwise, we might
      *  find a global command, but that wouldn't be clobbered!
      */
-    cmd = Tcl_FindCommand(interp, (CONST84 char *)name,
+    cmd = Tcl_FindCommand(interp, name,
 	(Tcl_Namespace*)NULL, TCL_NAMESPACE_ONLY);
 
     if (cmd != NULL && !Itcl_IsStub(cmd)) {
@@ -668,7 +666,7 @@ Itcl_HandleInstance(clientData, interp, objc, objv)
         return TCL_ERROR;
     }
 
-    framePtr = &context.frame;
+    framePtr = (ItclCallFrame *) &context.frame;
     Itcl_PushStack((ClientData)framePtr, &info->transparentFrames);
 
     /* Bug 227824
@@ -735,7 +733,7 @@ Itcl_GetInstanceVar(interp, name, contextObj, contextClass)
         return NULL;
     }
 
-    val = Tcl_GetVar2(interp, (CONST84 char *)name, (char*)NULL,
+    val = Tcl_GetVar2(interp, name, (char*)NULL,
 	    TCL_LEAVE_ERR_MSG);
     Itcl_PopContext(interp, &context);
 
@@ -872,7 +870,7 @@ ItclTraceThisVar(cdata, interp, name1, name2, flags)
         }
 
         objName = Tcl_GetString(objPtr);
-        Tcl_SetVar(interp, (CONST84 char *)name1, objName, 0);
+        Tcl_SetVar(interp, name1, objName, 0);
 
         Tcl_DecrRefCount(objPtr);
         return NULL;
@@ -1154,7 +1152,7 @@ Itcl_ScopedVarResolver(interp, name, contextNs, flags, rPtr)
     Tcl_Var *rPtr;             /* returns: resolved variable */
 {
     int namec;
-    char **namev;
+    CONST char **namev;
     Tcl_Interp *errs;
     Tcl_CmdInfo cmdInfo;
     ItclObject *contextObj;
@@ -1179,7 +1177,7 @@ Itcl_ScopedVarResolver(interp, name, contextNs, flags, rPtr)
         errs = NULL;
     }
 
-    if (Tcl_SplitList(errs, (CONST84 char *)name, &namec, &namev)
+    if (Tcl_SplitList(errs, name, &namec, &namev)
 	    != TCL_OK) {
         return TCL_ERROR;
     }
@@ -1198,7 +1196,8 @@ Itcl_ScopedVarResolver(interp, name, contextNs, flags, rPtr)
      *  Look for the command representing the object and extract
      *  the object context.
      */
-    if (!Tcl_GetCommandInfo(interp, namev[1], &cmdInfo)) {
+    if (!Tcl_GetCommandInfo(interp, namev[1], &cmdInfo)
+	    || cmdInfo.objProc != Itcl_HandleInstance) {
         if (errs) {
             Tcl_AppendResult(errs,
                 "can't resolve scoped variable \"", name, "\": ",
