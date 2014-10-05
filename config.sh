@@ -10,7 +10,7 @@ shift
 
 case $root in .) root=8.4;; esac
 path=$root/$base
-  
+
 if test ! -d $root
   then echo "error: directory '$root' does not exist"; exit 1; fi
 
@@ -34,21 +34,21 @@ mkdir -p $path
 
 case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
 
-( echo "# Generated `date`:"
+( echo "# Generated `date` for $mach:"
   echo "#   `basename $0` $args"
   echo
-  
+
   case $mach in
-  
+
     Darwin)
       case $aqua in
         1) echo "GUI_OPTS   = -framework Carbon -framework IOKit" ;;
         *) echo "GUI_OPTS   = -L/usr/X11R6/lib -lX11 -weak-lXss -lXext" ;;
       esac
-      
+
       echo "LDFLAGS    = -framework CoreFoundation"
       echo "LDSTRIP    = -x"
-      
+
       case $b64-$univ-$ppc-$x86 in
         0-0-0-0) ;;
         0-0-1-0) echo "CFLAGS    += -arch ppc" ;;
@@ -60,13 +60,13 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
       esac
       echo "CFLAGS    += -isysroot /Developer/SDKs/MacOSX10.4u.sdk" \
                           "-mmacosx-version-min=10.4"
-      
+
       case $aqua in 1)
         echo "TK_OPTS    = --enable-aqua"
         echo "TKDYN_OPTS = --enable-aqua" ;;
       esac
       ;;
-      
+
     Linux)
       echo "CC         = ${CC:=gcc}"
       echo "CXX        = ${CXX:=gcc}"
@@ -77,9 +77,10 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
           echo "GUI_OPTS  += -lXft -lXext"
       fi
       case $b64 in 1)
-        echo "CFLAGS     += -m64" ;; 
+        echo "CFLAGS     += -m64" ;;
       esac
-      [ -x $upx ] && echo "UPX        = $upx"
+      [ -x "$upx" ] || upx=':'
+      echo "UPX        = $upx"
       ;;
 
     *BSD)
@@ -88,7 +89,7 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
       echo "LDFLAGS    = -lm"
       echo "GUI_OPTS   = -L/usr/X11R6/lib -lX11 -lXss"
       case $b64 in 1)
-        echo "CFLAGS     += -m64" ;; 
+        echo "CFLAGS     += -m64" ;;
       esac
       ;;
 
@@ -106,7 +107,7 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
       echo 'CLIOBJ     = $(OBJ) $(OUTDIR)/tclAppInit.o $(OUTDIR)/tclkitsh.res.o'
       echo 'DYNOBJ     = $(CLIOBJ) $(OUTDIR)/tkdyn/wish.res.o'
       echo 'GUIOBJ     = $(OBJ) $(OUTDIR)/winMain.o $(OUTDIR)/tclkit.res.o'
-      echo 'PRIV       = install-private-headers'
+      echo 'PRIV       = install-headers install-private-headers'
       echo 'EXE        = .exe'
       [ -x $upx ] && echo "UPX        = $upx"
       plat=win
@@ -133,44 +134,44 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
   echo "PLAT       = $plat"
   echo "KITFLAGS   ="
   case $plat in unix)
-    echo "PRIV       = install-private-headers" ;;
+    echo "PRIV       = install-headers install-private-headers" ;;
   esac
   case $b64 in 1)
-    echo "TCL_OPTS   += --enable-64bit" 
-    echo "TK_OPTS    += --enable-64bit" 
-    echo "VFS_OPTS   += --enable-64bit" 
+    echo "TCL_OPTS   += --enable-64bit"
+    echo "TK_OPTS    += --enable-64bit"
+    echo "VFS_OPTS   += --enable-64bit"
     echo "VLERQ_OPTS += --enable-64bit"
     echo "MK_OPTS    += --enable-64bit"
     echo "ITCL_OPTS  += --enable-64bit"
-    ;; 
+    ;;
   esac
 
   #case $verbose in 1) kitopts=" -d" ;; esac
   case $allenc  in 1) kitopts="$kitopts -e" ;; esac
   case $allmsgs in 1) kitopts="$kitopts -m" ;; esac
   case $tzdata  in 1) kitopts="$kitopts -z" ;; esac
-  
+
   case $thread in
     1) case $mach in Linux|SunOS|*BSD)
-	       echo "LDFLAGS   += -lpthread" ;;
+          echo "LDFLAGS   += -lpthread" ;;
        esac
        echo "TCL_OPTS   = --enable-threads"
        echo "KIT_OPTS   = -t$kitopts" ;;
     0) echo "KIT_OPTS   =$kitopts" ;;
   esac
-  
+
   case $plat in win) echo "TCL_OPTS  += --with-encoding=utf-8" ;; esac
   case $tzdata in 1) echo "TCL_OPTS  += --with-tzdata" ;; esac
 
-  case $gprof in 1) 
+  case $gprof in 1)
     echo "CFLAGS    += -pg"
-    sym=1 ;; 
+    sym=1 ;;
   esac
 
-  case $gcov in 1) 
+  case $gcov in 1)
     echo "CFLAGS    += -fprofile-arcs -ftest-coverage -O0"
     echo "LDFLAGS   += -lgcov"
-    sym=1 ;; 
+    sym=1 ;;
   esac
 
   case $sym in 1)
@@ -186,15 +187,15 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
     echo "ITCL_OPTS      += --enable-symbols"
     echo ;;
   esac
-  
+
   case $cli in 1) targets="$targets tclkit-cli" ;; esac
   case $dyn in 1) targets="$targets tclkit-dyn" ;; esac
   case $gui in 1) targets="$targets tclkit-gui" ;; esac
-  case $mk in 
+  case $mk in
     1)  case $cli in 1) targets="$targets tclkitsh" ;; esac
         case $dyn in 1) targets="$targets tclkit" ;; esac
         case $gui in 1) targets="$targets tclkit" ;; esac
-        ;; 
+        ;;
   esac
 
   case $thread in
@@ -211,10 +212,10 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
                    echo "tclkit: tclkit.exe" ;;
     esac
   esac
-  
+
   echo
   echo "include ../../makefile.include"
-  
+
 ) >$make
 
 case $verbose in 1)
