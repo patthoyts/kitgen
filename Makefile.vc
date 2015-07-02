@@ -67,7 +67,7 @@ COPY    = copy /y >NUL
 RMDIR   = rmdir /s /q
 CC      = cl -nologo
 LINK    = link -nologo
-CFLAGS  = -W3 -D_WINDOWS -DWIN32 -DSTATIC_BUILD
+CFLAGS  = -W3 -D_WINDOWS -DWIN32 -DSTATIC_BUILD -D_UNICODE -DUNICODE
 BUILD   = $(MAKEDIR)\build
 
 # NOTE: if you do this then the tcl::pkgconfig command will

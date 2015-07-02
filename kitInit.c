@@ -243,7 +243,7 @@ TclKit_AppInit(Tcl_Interp *interp)
 error:
 #if defined(KIT_INCLUDES_TK) && defined(_WIN32)
     MessageBeep(MB_ICONEXCLAMATION);
-    MessageBox(NULL, Tcl_GetStringResult(interp), "Error in Tclkit",
+    MessageBoxA(NULL, Tcl_GetStringResult(interp), "Error in Tclkit",
         MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
     ExitProcess(1);
     /* we won't reach this, but we need the return */
