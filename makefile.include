@@ -24,7 +24,6 @@ SO    ?=.so
 tclkit-cli$(EXE): kit-cli$(EXE) ../../setupvfs.tcl build/files
 	cp kit-cli$(EXE) $@ && $(STRIP) $@ && $(UPX) $@
 	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ cli
-	./$@ ../../validate.tcl
 
 tclkit-dyn$(EXE): kit-dyn$(EXE) ../../setupvfs.tcl build/files
 	cp kit-dyn$(EXE) $@ && $(STRIP) $@ $@ && $(UPX) $@
