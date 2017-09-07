@@ -22,7 +22,7 @@ A     ?=.a
 SO    ?=.so
 
 tclkit-cli$(EXE): kit-cli$(EXE) ../../setupvfs.tcl build/files
-	cp kit-cli$(EXE) $@ && $(STRIP) $@ && $(UPX) $@
+	cp kit-cli$(EXE) $@ && $(STRIP) $@
 	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ cli
 	./$@ ../../validate.tcl
 
