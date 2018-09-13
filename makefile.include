@@ -22,7 +22,7 @@ A     ?=.a
 SO    ?=.so
 
 tclkit-cli$(EXE): kit-cli$(EXE) ../../setupvfs.tcl build/files
-	cp kit-cli$(EXE) $@ && $(STRIP) $@ && $(UPX) $@
+	cp kit-cli$(EXE) $@ && $(STRIP) $@
 	./kit-cli -init- ../../setupvfs.tcl $(KIT_OPTS) $@ cli
 	./$@ ../../validate.tcl
 
@@ -102,7 +102,7 @@ ifeq ($(PLAT),win)
 	cp libz.a ../lib/libz.a && \
 	cp zlib.h zconf.h ../include/
 else
-	cd $@ && CC=$(CC) CFLAGS=$(CFLAGS) sh configure && \
+	cd $@ && CC=$(CC) CFLAGS="$(CFLAGS)" sh configure && \
 	$(MAKE) install prefix=..
 endif
 
