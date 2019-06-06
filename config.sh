@@ -41,12 +41,13 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
   case $mach in
 
     Darwin)
+      sed -i '' 's/?=.so/?=.dylib/g' makefile.include
       case $aqua in
         1) echo "GUI_OPTS   = -framework Carbon -framework IOKit" ;;
         *) echo "GUI_OPTS   = -L/usr/X11R6/lib -lX11 -weak-lXss -lXext" ;;
       esac
 
-      echo "LDFLAGS    = -framework CoreFoundation"
+      echo "LDFLAGS    = -F/System/Library/Frameworks -framework CoreFoundation -framework AppKit"
       echo "LDSTRIP    = -x"
 
       case $b64-$univ-$ppc-$x86 in
@@ -58,19 +59,21 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
         1-0-0-1) echo "CFLAGS    += -arch x86_64" ;;
         1-?-?-?) echo "CFLAGS    += -arch ppc64 -arch x86_64" ;;
       esac
-      echo "CFLAGS    += -isysroot /Developer/SDKs/MacOSX10.4u.sdk" \
-                          "-mmacosx-version-min=10.4"
+      echo "CFLAGS    += -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk" \
+                          "-mmacosx-version-min=10.6"
 
       case $aqua in 1)
         echo "TK_OPTS    = --enable-aqua"
         echo "TKDYN_OPTS = --enable-aqua" ;;
       esac
+      [ -x "$upx" ] || upx=':'
+      echo "UPX        = $upx"
       ;;
 
     Linux)
       echo "CC         = ${CC:=gcc}"
       echo "CXX        = ${CXX:=gcc}"
-      echo "LDFLAGS    = -ldl -lm"
+      echo "LDFLAGS    = -ldl -lm -lfontconfig"
       echo "LDXXFLAGS  = -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic"
       echo "GUI_OPTS   = -L/usr/X11R6/lib -lX11 -lXss"
       if [ $root != "8.4" ]; then
