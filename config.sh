@@ -70,7 +70,7 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
     Linux)
       echo "CC         = ${CC:=gcc}"
       echo "CXX        = ${CXX:=gcc}"
-      echo "LDFLAGS    = -ldl -lm"
+      echo "LDFLAGS    = -ldl -lm -lfontconfig"
       echo "LDXXFLAGS  = -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic"
       echo "GUI_OPTS   = -L/usr/X11R6/lib -lX11 -lXss"
       if [ $root != "8.4" ]; then
