@@ -27,3 +27,4 @@ versions.vc
 /8.x/mk/builds/
 /8.x/mk/win/Debug/
 /8.x/mk/win/Release/
+.DS_Store
