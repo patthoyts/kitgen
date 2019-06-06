@@ -41,6 +41,7 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
   case $mach in
 
     Darwin)
+      sed -i '' 's/?=.so/?=.dylib/g' makefile.include
       case $aqua in
         1) echo "GUI_OPTS   = -framework Carbon -framework IOKit" ;;
         *) echo "GUI_OPTS   = -L/usr/X11R6/lib -lX11 -weak-lXss -lXext" ;;
