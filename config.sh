@@ -66,6 +66,8 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
         echo "TK_OPTS    = --enable-aqua"
         echo "TKDYN_OPTS = --enable-aqua" ;;
       esac
+      [ -x "$upx" ] || upx=':'
+      echo "UPX        = $upx"
       ;;
 
     Linux)
