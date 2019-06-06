@@ -1,0 +1,2 @@
+!include ../../Makefile.vc
+all: lite heavy
