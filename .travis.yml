@@ -35,18 +35,19 @@ script:
   - cd 8.6/build
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then ./winmake.bat; fi
   - if [[ "$TRAVIS_OS_NAME" != "windows" ]]; then make; fi
-  - mkdir release
-  - mv tclkit-* release/
-  - cd release && for f in *; do mv $f $TRAVIS_OS_NAME-${f%%}; done
+  - mkdir out
+  - mv tclkit-* out/
+  - cd out && for f in *; do mv $f $TRAVIS_OS_NAME-${f%%}; done
 
-deploy:
-  provider: releases
-  api_key:
-    secure: bGoOvEOGfE48EsWRe76MFhM5P5TekQa3S9C/Yt4Xsery7UDV9UKJn3HK1AYDM1mokGnh0bhVP6o2cHkWGmgTYBI+7jzGuR29n/wX0rNAbZ7lP7LG41DRmS+vmRhipIeWUgSMH6lKbQy37TNkhFzJsQs4bABbZcFOilkrVDQtbmV5UbPFN91PQFCe8y0h6uiRrSNPBlhLwvmyLtAJlfYHUYVYGzv+Eknkblv87QPnQFg6xm4FdkYui/d7M7prVyT6NDvKKSGanzUILeok9CEKEmeZwdP8PUyVpsHhC8X4IWTzsN5+PTTuAq4Z2DJl03Mp53cblSOhVAEJCJDAkKEoGmbd+3YpJBGWLo1nD2TQT6c+vdkn6wuraH3miBDWeBFbEl/X/ABncExoaegQ/eGe/CEBLBxaqyS2YXtM5BHgdvBAGcN2ok2iB8cXUurHboHJZdeLu6/Ml50k/UmL2mzt9Iij3GptLcXFAnocC+Ei0H4bz6LXRgPWPk8MI6UEVoH7HF01HsG1/MOZDA01Buu7zCbWT7IMj2GUjfv4hN3Xd8qf4Rjswjknd0gChMEmJCIanSsg4qLZYSdkNXRCCa9+RbjQkPxpIwwJ1bMbPLChljfuWumzOL6a3QXgQJwYdFfcd4Ogy7cy7GuNDT+Ivj0ZwCh33KW/o0Eg3EC7TjUzCHc=
-  file_glob: true
-  file: ./*
-  skip_cleanup: true
-  overwrite: true
-  draft: true
-  on:
-    repo: VitoVan/kitgen
+# https://github.com/probonopd/uploadtool
+after_success:
+  - cd ../
+  - export UPLOADTOOL_SUFFIX=$TRAVIS_OS_NAME
+  - ls -lh out/* # Assuming you have some files in out/ that you would like to upload
+  - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
+  - bash upload.sh out/*
+
+branches:
+  only:
+    - # Do not build tags that we create when we upload to GitHub Releases
+    - master
