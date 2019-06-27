@@ -119,9 +119,9 @@ LDFLAGS = -debug
 !if $(UPX)
 !if $(UPXLEVEL) > 1
 # can add --ultra-brute --compress-resources=0 for release
-UPXCOMP = upx -q --ultra-brute --compress-resources=0 $@
+UPXCOMP = upx -k -q --ultra-brute --compress-resources=0 $@
 !else
-UPXCOMP = upx -q9 $@ >NUL
+UPXCOMP = upx -k -q9 $@ >NUL
 !endif
 !endif
 !endif
@@ -196,14 +196,14 @@ tclkit:     tclkit.exe
 
 tclkit-cli.exe: kit-cli.exe tidy
 	@$(COPY) kit-cli.exe $@
-	-@$(UPXCOMP)
 	kit-cli.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ cli
+	-@$(UPXCOMP)
 	$@ ../../validate.tcl
 
 tclkit-gui.exe: kit-gui.exe tidy
 	@$(COPY) kit-gui.exe $@
-	-@$(UPXCOMP)
 	kit-cli.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ gui
+	-@$(UPXCOMP)
 
 kit-cli.exe: setup tcl $(PARTS) files $(CLIOBJS)
 	@$(CC) $(CFLAGS) -I$(BUILD)/include -DKIT_LITE -DSTATIC_BUILD \
@@ -234,14 +234,14 @@ kit-gui.exe: setup tcl tk $(PARTS) files $(GUIOBJS)
 
 tclkitsh.exe: kitsh.exe tidy
 	@$(COPY) kitsh.exe $@
-	-@$(UPXCOMP)
 	kitsh.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ cli
+	-@$(UPXCOMP)
 	$@ ../../validate.tcl
 
 tclkit.exe: kitsh.exe kit.exe tidy
 	@$(COPY) kit.exe $@
-	-@$(UPXCOMP)
 	kitsh.exe -init- ../../setupvfs.tcl $(KITOPTS) $@ gui
+	-@$(UPXCOMP)
 
 kitsh.exe: setup tcl mk itcl $(PARTS:vqtcl=) files $(CLIOBJS)
 	@$(CC) $(CFLAGS) -I$(BUILD)/include -DSTATIC_BUILD \
