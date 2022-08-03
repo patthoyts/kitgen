@@ -47,7 +47,7 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
         *) echo "GUI_OPTS   = -L/usr/X11R6/lib -lX11 -weak-lXss -lXext" ;;
       esac
 
-      echo "LDFLAGS    = -F/System/Library/Frameworks -framework CoreFoundation -framework AppKit"
+      echo "LDFLAGS    = -F/System/Library/Frameworks -framework CoreFoundation -framework AppKit -framework QuartzCore"
       echo "LDSTRIP    = -x"
 
       case $b64-$univ-$ppc-$x86 in
