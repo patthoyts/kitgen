@@ -53,3 +53,4 @@ branches:
   only:
     - # Do not build tags that we create when we upload to GitHub Releases
     - master
+    - for-release-*
