@@ -4,7 +4,7 @@ os:
   - osx
   - windows
 
-osx_image: xcode10.2
+osx_image: xcode13.4
 
 addons:
   apt:
@@ -14,17 +14,19 @@ addons:
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export HOMEBREW_NO_AUTO_UPDATE=1; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export HOMEBREW_NO_INSTALL_CLEANUP=1; fi
+  # Windows builds are in early access stage, the certs may not working well
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then export BY_PASS_WIN_CERT=--no-check-certificate; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install upx; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then powershell -ExecutionPolicy ByPass -File ./.travis/install-wdk.ps1; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then choco install upx; fi
 
 install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then which upx; fi
-  - wget https://sourceforge.net/projects/tcl/files/Tcl/8.6.9/tcl8.6.9-src.tar.gz
-  - wget https://sourceforge.net/projects/tcl/files/Tcl/8.6.9/tk8.6.9.1-src.tar.gz
+  - wget $BY_PASS_WIN_CERT https://sourceforge.net/projects/tcl/files/Tcl/8.6.12/tcl8.6.12-src.tar.gz
+  - wget $BY_PASS_WIN_CERT https://sourceforge.net/projects/tcl/files/Tcl/8.6.12/tk8.6.12-src.tar.gz
   - mkdir 8.6
-  - tar -C 8.6 -xzvf tcl8.6.9-src.tar.gz && mv 8.6/tcl8.6.9 8.6/tcl
-  - tar -C 8.6 -xzvf tk8.6.9.1-src.tar.gz && mv 8.6/tk8.6.9 8.6/tk
+  - tar -C 8.6 -xzvf tcl8.6.12-src.tar.gz && mv 8.6/tcl8.6.12 8.6/tcl
+  - tar -C 8.6 -xzvf tk8.6.12-src.tar.gz && mv 8.6/tk8.6.12 8.6/tk
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sh config.sh 8.6/build aqua thread; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh config.sh 8.6/build thread b64; fi
   - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then mkdir 8.6/build ; fi
@@ -44,7 +46,7 @@ after_success:
   - cd ../
   - export UPLOADTOOL_SUFFIX=$TRAVIS_OS_NAME
   - ls -lh out/* # Assuming you have some files in out/ that you would like to upload
-  - wget -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
+  - wget $BY_PASS_WIN_CERT -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
   - bash upload.sh out/*
 
 branches:
