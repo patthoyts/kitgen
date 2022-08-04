@@ -47,6 +47,9 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
         *) echo "GUI_OPTS   = -L/usr/X11R6/lib -lX11 -weak-lXss -lXext" ;;
       esac
 
+      # https://core.tcl-lang.org/tk/info/85f316beb15108ac43b03fa6c8608e31f3ae5f92
+      # https://core.tcl-lang.org/tk/info/3bc8ae4e71530ed8
+      echo "SHARED_BUILD=0"
       echo "LDFLAGS    = -F/System/Library/Frameworks -framework CoreFoundation -framework AppKit -framework QuartzCore"
       echo "LDSTRIP    = -x"
 
