@@ -46,7 +46,7 @@ after_success:
   - cd ../
   - export UPLOADTOOL_SUFFIX=$TRAVIS_OS_NAME
   - ls -lh out/* # Assuming you have some files in out/ that you would like to upload
-  - wget $BY_PASS_WIN_CERT -c https://github.com/probonopd/uploadtool/raw/master/upload.sh
+  - wget $BY_PASS_WIN_CERT -c https://github.com/VitoVan/uploadtool/raw/master/upload.sh
   - bash upload.sh out/*
 
 branches:
