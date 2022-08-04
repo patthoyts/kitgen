@@ -1,0 +1,145 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  push:
+    tags:
+      - "*.*.*"
+      - "pre-release-*"
+
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+
+  osx-build:
+    # The type of runner that the job will run on
+    runs-on: macos-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      # Runs a single command using the runners shell
+      - name: Run a one-line script
+        run: echo Hello, world!
+
+      # Runs a set of commands using the runners shell
+      - name: Build Tlckit
+        run: |
+          brew install upx
+          wget https://sourceforge.net/projects/tcl/files/Tcl/8.6.12/tcl8.6.12-src.tar.gz
+          wget https://sourceforge.net/projects/tcl/files/Tcl/8.6.12/tk8.6.12-src.tar.gz
+          mkdir 8.6
+          tar -C 8.6 -xzvf tcl8.6.12-src.tar.gz && mv 8.6/tcl8.6.12 8.6/tcl
+          tar -C 8.6 -xzvf tk8.6.12-src.tar.gz && mv 8.6/tk8.6.12 8.6/tk
+          sh config.sh 8.6/build aqua thread
+          cd 8.6/build
+          make
+          mkdir out
+          mv tclkit-* out/
+          ls -lah out/
+          cd out && for f in *; do mv $f osx-${f%%}; done
+      - name: GH Release
+        uses: softprops/action-gh-release@v0.1.14
+        with:
+          prerelease: true
+          files: |
+            8.6/build/out/*
+
+  # This workflow contains a single job called "build"
+  linux-build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      # Runs a single command using the runners shell
+      - name: Run a one-line script
+        run: echo Hello, world!
+
+      # Runs a set of commands using the runners shell
+      - name: Build Tlckit
+        run: |
+          sudo apt install upx libxss-dev -y
+          wget https://sourceforge.net/projects/tcl/files/Tcl/8.6.12/tcl8.6.12-src.tar.gz
+          wget https://sourceforge.net/projects/tcl/files/Tcl/8.6.12/tk8.6.12-src.tar.gz
+          mkdir 8.6
+          tar -C 8.6 -xzvf tcl8.6.12-src.tar.gz && mv 8.6/tcl8.6.12 8.6/tcl
+          tar -C 8.6 -xzvf tk8.6.12-src.tar.gz && mv 8.6/tk8.6.12 8.6/tk
+          sh config.sh 8.6/build thread b64
+          cd 8.6/build
+          make
+          mkdir out
+          mv tclkit-* out/
+          ls -lah out/
+          cd out && for f in *; do mv $f linux-${f%%}; done
+      - name: GH Release
+        uses: softprops/action-gh-release@v0.1.14
+        with:
+          prerelease: true
+          files: |
+            8.6/build/out/*
+
+  windows-build:
+    # The type of runner that the job will run on
+    runs-on: windows-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      # Runs a single command using the runners shell
+      - name: Run a one-line script
+        run: echo Hello, world!
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          location: D:\
+          release: true
+          update: false
+          install: upx
+
+      # Runs a set of commands using the runners shell
+      - name: Pre Build Tlckit
+        shell: msys2 {0}
+        run: |
+          wget https://sourceforge.net/projects/tcl/files/Tcl/8.6.12/tcl8.6.12-src.tar.gz
+          wget https://sourceforge.net/projects/tcl/files/Tcl/8.6.12/tk8.6.12-src.tar.gz
+          mkdir 8.6
+          tar -C 8.6 -xzvf tcl8.6.12-src.tar.gz && mv 8.6/tcl8.6.12 8.6/tcl
+          tar -C 8.6 -xzvf tk8.6.12-src.tar.gz && mv 8.6/tk8.6.12 8.6/tk
+          mkdir 8.6/build
+          cp .travis/Makefile.nmake 8.6/build/Makefile
+          cp .travis/*.bat 8.6/build/
+
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Build Tlckit
+        run: |
+          cd 8.6/build
+          ./winmake.bat
+
+      - name: Post Build Tlckit
+        shell: msys2 {0}
+        run: |
+          cd 8.6/build
+          mkdir out
+          mv tclkit-* out/
+          ls -lah out/
+          cd out && for f in *; do mv $f windows-${f%%}; done
+
+      - name: GH Release
+        uses: softprops/action-gh-release@v0.1.14
+        with:
+          prerelease: true
+          files: |
+            8.6/build/out/*
