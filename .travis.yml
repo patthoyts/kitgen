@@ -50,6 +50,6 @@ after_success:
   - bash upload.sh out/*
 
 branches:
-  only:
+  except:
     - # Do not build tags that we create when we upload to GitHub Releases
     - /^(?i:continuous.*)$/

@@ -50,7 +50,7 @@ case $cli-$dyn-$gui in 0-0-0) cli=1 dyn=1 gui=1 ;; esac
       # https://core.tcl-lang.org/tk/info/85f316beb15108ac43b03fa6c8608e31f3ae5f92
       # https://core.tcl-lang.org/tk/info/3bc8ae4e71530ed8
       echo "SHARED_BUILD=0"
-      echo "LDFLAGS    = -F/System/Library/Frameworks -framework CoreFoundation -framework AppKit -framework QuartzCore"
+      echo "LDFLAGS    = -F/System/Library/Frameworks -framework CoreFoundation -framework AppKit -framework QuartzCore -ObjC"
       echo "LDSTRIP    = -x"
 
       case $b64-$univ-$ppc-$x86 in
